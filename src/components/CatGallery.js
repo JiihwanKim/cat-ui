@@ -2,142 +2,184 @@ import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 
 const GalleryContainer = styled.div`
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  padding: 20px;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(20px);
+  border-radius: 24px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+  padding: 32px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  animation: fadeIn 0.6s ease-out;
 `;
 
 const Header = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 20px;
-  padding-bottom: 15px;
-  border-bottom: 2px solid #f0f0f0;
+  margin-bottom: 32px;
+  padding-bottom: 20px;
+  border-bottom: 2px solid rgba(255, 255, 255, 0.2);
 `;
 
 const Title = styled.h2`
-  color: #333;
+  color: white;
   margin: 0;
+  font-size: 2rem;
+  font-weight: 700;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
 `;
 
 const Stats = styled.div`
   text-align: right;
-  color: #666;
+  color: rgba(255, 255, 255, 0.9);
+  font-weight: 500;
 `;
 
 const Controls = styled.div`
   display: flex;
-  gap: 10px;
-  margin-bottom: 20px;
+  gap: 12px;
+  margin-bottom: 24px;
   flex-wrap: wrap;
 `;
 
 const Button = styled.button`
-  padding: 10px 20px;
+  padding: 12px 24px;
   border: none;
-  border-radius: 6px;
+  border-radius: 16px;
   font-size: 1rem;
   cursor: pointer;
-  transition: all 0.3s ease;
-  font-weight: 500;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  font-weight: 600;
+  position: relative;
+  overflow: hidden;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: left 0.5s;
+  }
+
+  &:hover::before {
+    left: 100%;
+  }
 
   &.primary {
-    background: #007bff;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     color: white;
+    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
     
     &:hover {
-      background: #0056b3;
+      transform: translateY(-2px);
+      box-shadow: 0 12px 35px rgba(102, 126, 234, 0.4);
     }
   }
 
   &.secondary {
-    background: #6c757d;
+    background: rgba(255, 255, 255, 0.2);
     color: white;
+    border: 1px solid rgba(255, 255, 255, 0.3);
     
     &:hover {
-      background: #545b62;
+      background: rgba(255, 255, 255, 0.3);
+      transform: translateY(-2px);
     }
   }
 
   &.success {
-    background: #28a745;
+    background: linear-gradient(135deg, #56ab2f 0%, #a8e6cf 100%);
     color: white;
+    box-shadow: 0 8px 25px rgba(86, 171, 47, 0.3);
     
     &:hover {
-      background: #1e7e34;
+      transform: translateY(-2px);
+      box-shadow: 0 12px 35px rgba(86, 171, 47, 0.4);
     }
   }
 
   &.danger {
-    background: #dc3545;
+    background: linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%);
     color: white;
+    box-shadow: 0 8px 25px rgba(255, 107, 107, 0.3);
     
     &:hover {
-      background: #c82333;
+      transform: translateY(-2px);
+      box-shadow: 0 12px 35px rgba(255, 107, 107, 0.4);
     }
   }
 
   &.info {
-    background: #17a2b8;
+    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
     color: white;
+    box-shadow: 0 8px 25px rgba(79, 172, 254, 0.3);
     
     &:hover {
-      background: #138496;
+      transform: translateY(-2px);
+      box-shadow: 0 12px 35px rgba(79, 172, 254, 0.4);
     }
   }
 
   &.warning {
-    background: #ffc107;
-    color: #212529;
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    color: white;
+    box-shadow: 0 8px 25px rgba(240, 147, 251, 0.3);
     
     &:hover {
-      background: #e0a800;
+      transform: translateY(-2px);
+      box-shadow: 0 12px 35px rgba(240, 147, 251, 0.4);
     }
   }
 
   &:disabled {
     opacity: 0.6;
     cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
   }
 `;
 
 const GroupSelector = styled.div`
   display: flex;
-  gap: 10px;
-  margin-bottom: 20px;
+  gap: 12px;
+  margin-bottom: 24px;
   flex-wrap: wrap;
   align-items: center;
 `;
 
 const GroupButton = styled.button`
-  padding: 8px 16px;
-  border: 2px solid ${props => props.selected ? '#007bff' : '#e9ecef'};
-  background: ${props => props.selected ? '#007bff' : 'white'};
-  color: ${props => props.selected ? 'white' : '#333'};
+  padding: 12px 20px;
+  border: 2px solid ${props => props.selected ? 'rgba(255, 255, 255, 0.8)' : 'rgba(255, 255, 255, 0.3)'};
+  background: ${props => props.selected ? 'rgba(255, 255, 255, 0.9)' : 'rgba(255, 255, 255, 0.1)'};
+  color: ${props => props.selected ? '#2d3748' : 'rgba(255, 255, 255, 0.9)'};
   border-radius: 20px;
   cursor: pointer;
-  font-size: 0.9rem;
-  font-weight: 500;
-  transition: all 0.3s ease;
+  font-size: 1rem;
+  font-weight: 600;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   display: flex;
   align-items: center;
   gap: 8px;
+  backdrop-filter: blur(10px);
   
   &:hover {
-    border-color: #007bff;
-    background: ${props => props.selected ? '#0056b3' : '#f8f9fa'};
+    border-color: rgba(255, 255, 255, 0.8);
+    background: ${props => props.selected ? 'rgba(255, 255, 255, 0.95)' : 'rgba(255, 255, 255, 0.2)'};
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
   }
 `;
 
 const GroupCount = styled.span`
-  background: ${props => props.selected ? 'white' : '#007bff'};
-  color: ${props => props.selected ? '#007bff' : 'white'};
+  background: ${props => props.selected ? '#2d3748' : 'rgba(255, 255, 255, 0.9)'};
+  color: ${props => props.selected ? 'white' : '#2d3748'};
   border-radius: 50%;
-  padding: 2px 6px;
-  font-size: 0.7rem;
-  margin-left: 5px;
+  padding: 4px 8px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  margin-left: 8px;
 `;
 
 const GroupActions = styled.div`
@@ -147,25 +189,26 @@ const GroupActions = styled.div`
 `;
 
 const ActionButton = styled.button`
-  padding: 4px 8px;
+  padding: 6px 10px;
   border: none;
-  border-radius: 4px;
-  font-size: 0.7rem;
+  border-radius: 12px;
+  font-size: 0.8rem;
   cursor: pointer;
   transition: all 0.3s ease;
   background: ${props => {
-    if (props.action === 'edit') return '#ffc107';
-    if (props.action === 'delete') return '#dc3545';
-    return '#6c757d';
+    if (props.action === 'edit') return 'rgba(255, 193, 7, 0.8)';
+    if (props.action === 'delete') return 'rgba(255, 107, 107, 0.8)';
+    return 'rgba(108, 117, 125, 0.8)';
   }};
-  color: ${props => props.action === 'edit' ? '#212529' : 'white'};
+  color: ${props => props.action === 'edit' ? '#2d3748' : 'white'};
   
   &:hover {
     background: ${props => {
-      if (props.action === 'edit') return '#e0a800';
-      if (props.action === 'delete') return '#c82333';
-      return '#545b62';
+      if (props.action === 'edit') return 'rgba(255, 193, 7, 1)';
+      if (props.action === 'delete') return 'rgba(255, 107, 107, 1)';
+      return 'rgba(108, 117, 125, 1)';
     }};
+    transform: scale(1.05);
   }
 `;
 
@@ -175,109 +218,132 @@ const Modal = styled.div`
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(10px);
   display: flex;
   justify-content: center;
   align-items: center;
   z-index: 1000;
+  animation: fadeIn 0.3s ease-out;
 `;
 
 const ModalContent = styled.div`
-  background: white;
-  padding: 30px;
-  border-radius: 12px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-  min-width: 400px;
-  max-width: 500px;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(20px);
+  padding: 40px;
+  border-radius: 24px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+  min-width: 450px;
+  max-width: 550px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
 `;
 
 const ModalTitle = styled.h3`
-  margin: 0 0 20px 0;
-  color: #333;
-  font-size: 1.2rem;
+  margin: 0 0 24px 0;
+  color: white;
+  font-size: 1.5rem;
+  font-weight: 600;
 `;
 
 const ModalInput = styled.input`
   width: 100%;
-  padding: 12px;
-  border: 1px solid #ddd;
-  border-radius: 6px;
+  padding: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 12px;
   font-size: 1rem;
-  margin-bottom: 20px;
+  margin-bottom: 24px;
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+  backdrop-filter: blur(10px);
+  
+  &::placeholder {
+    color: rgba(255, 255, 255, 0.6);
+  }
   
   &:focus {
     outline: none;
-    border-color: #007bff;
-    box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+    border-color: rgba(255, 255, 255, 0.8);
+    box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.1);
   }
 `;
 
 const ModalButtons = styled.div`
   display: flex;
-  gap: 10px;
+  gap: 12px;
   justify-content: flex-end;
 `;
 
 const BulkActionSection = styled.div`
-  margin-bottom: 20px;
-  padding: 15px;
-  background: #fff3cd;
-  border-radius: 8px;
-  border: 1px solid #ffeaa7;
+  margin-bottom: 24px;
+  padding: 20px;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
   display: ${props => props.show ? 'block' : 'none'};
+  animation: fadeIn 0.5s ease-out;
 `;
 
 const BulkActionTitle = styled.h3`
-  margin: 0 0 10px 0;
-  font-size: 1rem;
-  color: #856404;
+  margin: 0 0 12px 0;
+  font-size: 1.1rem;
+  color: white;
+  font-weight: 600;
 `;
 
 const BulkActionDescription = styled.p`
-  margin: 0 0 15px 0;
-  font-size: 0.9rem;
-  color: #856404;
-  line-height: 1.4;
+  margin: 0 0 16px 0;
+  font-size: 1rem;
+  color: rgba(255, 255, 255, 0.8);
+  line-height: 1.5;
 `;
 
 const BulkActionControls = styled.div`
   display: flex;
-  gap: 10px;
+  gap: 12px;
   align-items: center;
   flex-wrap: wrap;
 `;
 
 const BulkNameInput = styled.input`
-  padding: 8px 12px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  font-size: 0.9rem;
-  min-width: 200px;
+  padding: 12px 16px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 12px;
+  font-size: 1rem;
+  min-width: 250px;
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+  backdrop-filter: blur(10px);
+  
+  &::placeholder {
+    color: rgba(255, 255, 255, 0.6);
+  }
   
   &:focus {
     outline: none;
-    border-color: #007bff;
-    box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+    border-color: rgba(255, 255, 255, 0.8);
+    box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.1);
   }
 `;
 
 const GalleryGrid = styled.div`
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 20px;
-  margin-bottom: 20px;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 24px;
+  margin-bottom: 24px;
 `;
 
 const CatCard = styled.div`
   border: 2px solid ${props => {
-    if (props.selected) return '#007bff';
-    if (props.highlighted) return '#28a745';
-    return '#e9ecef';
+    if (props.selected) return 'rgba(102, 126, 234, 0.8)';
+    if (props.highlighted) return 'rgba(86, 171, 47, 0.8)';
+    return 'rgba(255, 255, 255, 0.3)';
   }};
-  border-radius: 8px;
+  border-radius: 16px;
   overflow: hidden;
-  background: white;
-  transition: all 0.3s ease;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   cursor: pointer;
   user-select: none;
   -webkit-user-select: none;
@@ -285,26 +351,27 @@ const CatCard = styled.div`
   -ms-user-select: none;
 
   &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    transform: translateY(-4px);
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.2);
+    border-color: rgba(255, 255, 255, 0.6);
   }
 
   &.selected {
-    border-color: #007bff;
-    box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+    border-color: rgba(102, 126, 234, 0.8);
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
   }
 
   &.highlighted {
-    border-color: #28a745;
-    box-shadow: 0 0 0 2px rgba(40, 167, 69, 0.25);
+    border-color: rgba(86, 171, 47, 0.8);
+    box-shadow: 0 0 0 3px rgba(86, 171, 47, 0.2);
   }
 `;
 
 const CatImage = styled.div`
   position: relative;
   width: 100%;
-  height: 200px;
-  background: #f8f9fa;
+  height: 220px;
+  background: rgba(255, 255, 255, 0.1);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -317,118 +384,126 @@ const CatImage = styled.div`
   }
 
   .no-image {
-    color: #6c757d;
-    font-size: 0.9rem;
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 1rem;
     text-align: center;
   }
 `;
 
 const CatInfo = styled.div`
-  padding: 15px;
+  padding: 20px;
 `;
 
 const CatTitle = styled.h3`
-  margin: 0 0 8px 0;
-  font-size: 1rem;
-  color: #333;
+  margin: 0 0 12px 0;
+  font-size: 1.1rem;
+  color: white;
+  font-weight: 600;
 `;
 
 const CatDetails = styled.div`
-  font-size: 0.85rem;
-  color: #666;
-  line-height: 1.4;
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.8);
+  line-height: 1.5;
 `;
 
 const ConfidenceBadge = styled.span`
   display: inline-block;
-  padding: 2px 8px;
-  border-radius: 12px;
-  font-size: 0.75rem;
-  font-weight: 500;
-  margin-top: 5px;
+  padding: 4px 12px;
+  border-radius: 16px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  margin-top: 8px;
 
   &.high {
-    background: #d4edda;
-    color: #155724;
+    background: rgba(86, 171, 47, 0.2);
+    color: #56ab2f;
+    border: 1px solid rgba(86, 171, 47, 0.3);
   }
 
   &.medium {
-    background: #fff3cd;
-    color: #856404;
+    background: rgba(255, 193, 7, 0.2);
+    color: #ffc107;
+    border: 1px solid rgba(255, 193, 7, 0.3);
   }
 
   &.low {
-    background: #f8d7da;
-    color: #721c24;
+    background: rgba(255, 107, 107, 0.2);
+    color: #ff6b6b;
+    border: 1px solid rgba(255, 107, 107, 0.3);
   }
 `;
 
 const CatName = styled.div`
   font-weight: 600;
-  color: #007bff;
-  margin-top: 8px;
-  font-size: 0.9rem;
-  padding: 4px 8px;
-  background: #f8f9fa;
-  border-radius: 4px;
-  border-left: 3px solid #007bff;
+  color: rgba(102, 126, 234, 1);
+  margin-top: 12px;
+  font-size: 1rem;
+  padding: 8px 12px;
+  background: rgba(102, 126, 234, 0.1);
+  border-radius: 8px;
+  border-left: 4px solid rgba(102, 126, 234, 0.8);
 `;
 
 const EmptyState = styled.div`
   text-align: center;
-  padding: 40px 20px;
-  color: #6c757d;
+  padding: 60px 20px;
+  color: rgba(255, 255, 255, 0.7);
 `;
 
 const EmptyIcon = styled.div`
-  font-size: 3rem;
-  margin-bottom: 15px;
-  opacity: 0.5;
+  font-size: 4rem;
+  margin-bottom: 20px;
+  opacity: 0.6;
 `;
 
 const EmptyText = styled.p`
   margin: 0;
-  font-size: 1.1rem;
+  font-size: 1.2rem;
+  font-weight: 500;
 `;
 
 const StatusMessage = styled.div`
   text-align: center;
-  padding: 15px;
-  margin: 10px 0;
-  border-radius: 6px;
-  font-weight: 500;
+  padding: 16px;
+  margin: 16px 0;
+  border-radius: 12px;
+  font-weight: 600;
+  backdrop-filter: blur(10px);
 
   &.success {
-    background: #d4edda;
-    color: #155724;
-    border: 1px solid #c3e6cb;
+    background: rgba(86, 171, 47, 0.2);
+    color: #56ab2f;
+    border: 1px solid rgba(86, 171, 47, 0.3);
   }
 
   &.error {
-    background: #f8d7da;
-    color: #721c24;
-    border: 1px solid #f5c6cb;
+    background: rgba(255, 107, 107, 0.2);
+    color: #ff6b6b;
+    border: 1px solid rgba(255, 107, 107, 0.3);
   }
 
   &.info {
-    background: #d1ecf1;
-    color: #0c5460;
-    border: 1px solid #bee5eb;
+    background: rgba(79, 172, 254, 0.2);
+    color: #4facfe;
+    border: 1px solid rgba(79, 172, 254, 0.3);
   }
 `;
 
 const FilterSection = styled.div`
-  margin-bottom: 20px;
-  padding: 15px;
-  background: #f8f9fa;
-  border-radius: 8px;
-  border: 1px solid #e9ecef;
+  margin-bottom: 24px;
+  padding: 20px;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
 `;
 
 const FilterTitle = styled.h3`
-  margin: 0 0 10px 0;
-  font-size: 1rem;
-  color: #333;
+  margin: 0 0 12px 0;
+  font-size: 1.1rem;
+  color: white;
+  font-weight: 600;
 `;
 
 function CatGallery({ croppedCats, onBack, onReset, uploadSummary, isLoading: isGalleryLoading, onRefresh, savedGroups }) {

@@ -1,5 +1,345 @@
 import React, { useState, useEffect } from 'react';
-import './YOLOConfig.css';
+import styled from 'styled-components';
+
+const ConfigContainer = styled.div`
+  color: white;
+`;
+
+const Title = styled.h2`
+  color: white;
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: 24px;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+`;
+
+const Message = styled.div`
+  padding: 16px;
+  margin-bottom: 20px;
+  border-radius: 12px;
+  font-weight: 600;
+  backdrop-filter: blur(10px);
+  
+  &.success {
+    background: rgba(86, 171, 47, 0.2);
+    color: #56ab2f;
+    border: 1px solid rgba(86, 171, 47, 0.3);
+  }
+  
+  &.error {
+    background: rgba(255, 107, 107, 0.2);
+    color: #ff6b6b;
+    border: 1px solid rgba(255, 107, 107, 0.3);
+  }
+`;
+
+const ConfigSection = styled.div`
+  margin-bottom: 32px;
+  padding: 24px;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+`;
+
+const SectionTitle = styled.h3`
+  color: white;
+  font-size: 1.2rem;
+  font-weight: 600;
+  margin-bottom: 20px;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+`;
+
+const ConfigItem = styled.div`
+  margin-bottom: 20px;
+  
+  label {
+    display: block;
+    color: rgba(255, 255, 255, 0.9);
+    font-weight: 600;
+    margin-bottom: 8px;
+  }
+  
+  input[type="range"] {
+    width: 100%;
+    height: 8px;
+    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.2);
+    outline: none;
+    -webkit-appearance: none;
+    
+    &::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+    }
+    
+    &::-moz-range-thumb {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      cursor: pointer;
+      border: none;
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+    }
+  }
+  
+  input[type="number"], select {
+    width: 100%;
+    padding: 12px 16px;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+    font-size: 1rem;
+    backdrop-filter: blur(10px);
+    
+    &:focus {
+      outline: none;
+      border-color: rgba(255, 255, 255, 0.8);
+      box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.1);
+    }
+    
+    &::placeholder {
+      color: rgba(255, 255, 255, 0.6);
+    }
+  }
+  
+  span {
+    display: inline-block;
+    margin-left: 12px;
+    color: rgba(102, 126, 234, 1);
+    font-weight: 700;
+    font-size: 1.1rem;
+  }
+  
+  small {
+    display: block;
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 0.9rem;
+    margin-top: 4px;
+  }
+  
+  input[type="checkbox"] {
+    margin-right: 8px;
+    transform: scale(1.2);
+  }
+`;
+
+const ModelStatus = styled.div`
+  .status-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+    
+    &:last-child {
+      border-bottom: none;
+    }
+    
+    strong {
+      color: rgba(255, 255, 255, 0.9);
+      font-weight: 600;
+    }
+    
+    .status-success {
+      color: #56ab2f;
+      font-weight: 700;
+    }
+    
+    .status-error {
+      color: #ff6b6b;
+      font-weight: 700;
+    }
+  }
+`;
+
+const ModelFiles = styled.div`
+  margin-top: 20px;
+  
+  h4 {
+    color: white;
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-bottom: 16px;
+  }
+  
+  .model-file {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    margin-bottom: 8px;
+    
+    .file-exists {
+      color: #56ab2f;
+      font-weight: 600;
+    }
+    
+    .file-missing {
+      color: #ff6b6b;
+      font-weight: 600;
+    }
+    
+    .file-size {
+      color: rgba(255, 255, 255, 0.7);
+      font-size: 0.9rem;
+    }
+  }
+`;
+
+const ModelActions = styled.div`
+  display: flex;
+  gap: 12px;
+  margin-top: 20px;
+  flex-wrap: wrap;
+`;
+
+const Button = styled.button`
+  padding: 12px 24px;
+  border: none;
+  border-radius: 12px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: left 0.5s;
+  }
+
+  &:hover::before {
+    left: 100%;
+  }
+
+  &.primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+    
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 35px rgba(102, 126, 234, 0.4);
+    }
+  }
+
+  &.secondary {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    
+    &:hover {
+      background: rgba(255, 255, 255, 0.3);
+      transform: translateY(-2px);
+    }
+  }
+
+  &.success {
+    background: linear-gradient(135deg, #56ab2f 0%, #a8e6cf 100%);
+    color: white;
+    box-shadow: 0 8px 25px rgba(86, 171, 47, 0.3);
+    
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 35px rgba(86, 171, 47, 0.4);
+    }
+  }
+
+  &.danger {
+    background: linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%);
+    color: white;
+    box-shadow: 0 8px 25px rgba(255, 107, 107, 0.3);
+    
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 35px rgba(255, 107, 107, 0.4);
+    }
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+  }
+`;
+
+const PresetButtons = styled.div`
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+`;
+
+const PresetButton = styled(Button)`
+  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+  color: white;
+  box-shadow: 0 8px 25px rgba(79, 172, 254, 0.3);
+  
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 35px rgba(79, 172, 254, 0.4);
+  }
+`;
+
+const ActionButtons = styled.div`
+  display: flex;
+  gap: 12px;
+  margin-top: 24px;
+  flex-wrap: wrap;
+`;
+
+const ConfigInfo = styled.div`
+  margin-top: 32px;
+  
+  h3 {
+    color: white;
+    font-size: 1.2rem;
+    font-weight: 600;
+    margin-bottom: 16px;
+  }
+  
+  pre {
+    background: rgba(0, 0, 0, 0.3);
+    padding: 20px;
+    border-radius: 12px;
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 0.9rem;
+    overflow-x: auto;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+`;
+
+const DownloadButton = styled(Button)`
+  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+  color: white;
+  font-size: 0.9rem;
+  padding: 8px 16px;
+  box-shadow: 0 6px 20px rgba(240, 147, 251, 0.3);
+  
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(240, 147, 251, 0.4);
+  }
+`;
 
 const YOLOConfig = () => {
   const [config, setConfig] = useState({
@@ -172,20 +512,20 @@ const YOLOConfig = () => {
   };
 
   return (
-    <div className="yolo-config">
-      <h2>🐱 YOLO 설정</h2>
+    <ConfigContainer>
+      <Title>🐱 YOLO 설정</Title>
       
       {message && (
-        <div className={`message ${message.includes('실패') ? 'error' : 'success'}`}>
+        <Message className={message.includes('실패') ? 'error' : 'success'}>
           {message}
-        </div>
+        </Message>
       )}
 
       {/* 모델 상태 섹션 */}
-      <div className="config-section">
-        <h3>📦 모델 상태</h3>
+      <ConfigSection>
+        <SectionTitle>📦 모델 상태</SectionTitle>
         {modelStatus && (
-          <div className="model-status">
+          <ModelStatus>
             <div className="status-item">
               <strong>모델 로드 상태:</strong>
               <span className={modelStatus.modelLoaded ? 'status-success' : 'status-error'}>
@@ -193,7 +533,7 @@ const YOLOConfig = () => {
               </span>
             </div>
             
-            <div className="model-files">
+            <ModelFiles>
               <h4>모델 파일 상태:</h4>
               {modelStatus.models.map((model, index) => (
                 <div key={index} className="model-file">
@@ -204,35 +544,34 @@ const YOLOConfig = () => {
                     <span className="file-size">({model.size_mb} MB)</span>
                   )}
                   {!model.exists && (
-                    <button 
+                    <DownloadButton 
                       onClick={() => downloadModel(model.name)}
                       disabled={downloading}
-                      className="download-button"
                     >
                       {downloading ? '다운로드 중...' : '다운로드'}
-                    </button>
+                    </DownloadButton>
                   )}
                 </div>
               ))}
-            </div>
+            </ModelFiles>
             
-            <div className="model-actions">
-              <button onClick={fetchModelStatus} className="refresh-button">
+            <ModelActions>
+              <Button className="secondary" onClick={fetchModelStatus}>
                 🔄 상태 새로고침
-              </button>
-              <button onClick={reloadModel} disabled={loading} className="reload-button">
+              </Button>
+              <Button className="success" onClick={reloadModel} disabled={loading}>
                 🔄 모델 재로드
-              </button>
-            </div>
-          </div>
+              </Button>
+            </ModelActions>
+          </ModelStatus>
         )}
-      </div>
+      </ConfigSection>
 
       <form onSubmit={handleSubmit}>
-        <div className="config-section">
-          <h3>추론 설정</h3>
+        <ConfigSection>
+          <SectionTitle>추론 설정</SectionTitle>
           
-          <div className="config-item">
+          <ConfigItem>
             <label htmlFor="conf">신뢰도 임계값 (Confidence)</label>
             <input
               type="range"
@@ -245,9 +584,9 @@ const YOLOConfig = () => {
             />
             <span>{config.conf}</span>
             <small>0.1 (높은 감지율) - 0.9 (높은 정확도)</small>
-          </div>
+          </ConfigItem>
 
-          <div className="config-item">
+          <ConfigItem>
             <label htmlFor="iou">IoU 임계값</label>
             <input
               type="range"
@@ -260,9 +599,9 @@ const YOLOConfig = () => {
             />
             <span>{config.iou}</span>
             <small>0.3 (관대한 필터링) - 0.9 (엄격한 필터링)</small>
-          </div>
+          </ConfigItem>
 
-          <div className="config-item">
+          <ConfigItem>
             <label htmlFor="imgsz">이미지 크기</label>
             <select
               id="imgsz"
@@ -275,9 +614,9 @@ const YOLOConfig = () => {
               <option value={800}>800 (높은 정확도)</option>
               <option value={1280}>1280 (최고 정확도)</option>
             </select>
-          </div>
+          </ConfigItem>
 
-          <div className="config-item">
+          <ConfigItem>
             <label htmlFor="max_det">최대 감지 수</label>
             <input
               type="number"
@@ -287,13 +626,13 @@ const YOLOConfig = () => {
               value={config.max_det}
               onChange={(e) => handleInputChange('max_det', parseInt(e.target.value))}
             />
-          </div>
-        </div>
+          </ConfigItem>
+        </ConfigSection>
 
-        <div className="config-section">
-          <h3>성능 최적화</h3>
+        <ConfigSection>
+          <SectionTitle>성능 최적화</SectionTitle>
           
-          <div className="config-item">
+          <ConfigItem>
             <label>
               <input
                 type="checkbox"
@@ -303,9 +642,9 @@ const YOLOConfig = () => {
               혼합 정밀도 (Mixed Precision)
             </label>
             <small>메모리 사용량 감소 및 속도 향상</small>
-          </div>
+          </ConfigItem>
 
-          <div className="config-item">
+          <ConfigItem>
             <label>
               <input
                 type="checkbox"
@@ -315,9 +654,9 @@ const YOLOConfig = () => {
               클래스별 NMS
             </label>
             <small>클래스별로 NMS 수행</small>
-          </div>
+          </ConfigItem>
 
-          <div className="config-item">
+          <ConfigItem>
             <label>
               <input
                 type="checkbox"
@@ -327,43 +666,42 @@ const YOLOConfig = () => {
               상세 출력
             </label>
             <small>추론 과정의 상세한 로그 출력</small>
-          </div>
-        </div>
+          </ConfigItem>
+        </ConfigSection>
 
-        <div className="config-section">
-          <h3>사전 설정</h3>
-          <div className="preset-buttons">
+        <ConfigSection>
+          <SectionTitle>사전 설정</SectionTitle>
+          <PresetButtons>
             {Object.entries(presetConfigs).map(([key, preset]) => (
-              <button
+              <PresetButton
                 key={key}
                 type="button"
                 onClick={() => applyPreset(key)}
-                className="preset-button"
               >
                 {preset.name}
-              </button>
+              </PresetButton>
             ))}
-          </div>
-        </div>
+          </PresetButtons>
+        </ConfigSection>
 
-        <div className="action-buttons">
-          <button type="submit" disabled={loading}>
+        <ActionButtons>
+          <Button type="submit" className="primary" disabled={loading}>
             {loading ? '업데이트 중...' : '설정 업데이트'}
-          </button>
-          <button type="button" onClick={resetConfig} disabled={loading}>
+          </Button>
+          <Button type="button" className="secondary" onClick={resetConfig} disabled={loading}>
             기본값으로 초기화
-          </button>
-          <button type="button" onClick={reloadModel} disabled={loading}>
+          </Button>
+          <Button type="button" className="success" onClick={reloadModel} disabled={loading}>
             모델 재로드
-          </button>
-        </div>
+          </Button>
+        </ActionButtons>
       </form>
 
-      <div className="config-info">
+      <ConfigInfo>
         <h3>현재 설정 정보</h3>
         <pre>{JSON.stringify(config, null, 2)}</pre>
-      </div>
-    </div>
+      </ConfigInfo>
+    </ConfigContainer>
   );
 };
 

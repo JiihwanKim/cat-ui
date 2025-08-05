@@ -7,59 +7,97 @@ const UploadContainer = styled.div`
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 60px 20px;
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  border: 2px dashed #ddd;
-  transition: all 0.3s ease;
+  padding: 80px 40px;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(20px);
+  border-radius: 24px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+  border: 2px dashed rgba(255, 255, 255, 0.3);
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
 
   &:hover {
-    border-color: #007bff;
-    background-color: #f8f9fa;
+    border-color: rgba(255, 255, 255, 0.6);
+    background: rgba(255, 255, 255, 0.15);
+    transform: translateY(-4px);
+    box-shadow: 0 25px 50px rgba(0, 0, 0, 0.15);
+  }
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+    transition: left 0.6s;
+  }
+
+  &:hover::before {
+    left: 100%;
   }
 `;
 
 const Dropzone = styled.div`
   width: 100%;
-  max-width: 500px;
+  max-width: 600px;
   text-align: center;
   cursor: pointer;
+  position: relative;
+  z-index: 1;
 `;
 
 const UploadIcon = styled.div`
-  font-size: 4rem;
-  margin-bottom: 20px;
-  color: #007bff;
+  font-size: 5rem;
+  margin-bottom: 24px;
+  color: rgba(255, 255, 255, 0.9);
+  animation: pulse 2s infinite;
 `;
 
 const UploadText = styled.h2`
-  color: #333;
-  margin-bottom: 10px;
-  font-size: 1.5rem;
+  color: white;
+  margin-bottom: 16px;
+  font-size: 2rem;
+  font-weight: 600;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
 `;
 
 const UploadDescription = styled.p`
-  color: #666;
-  margin-bottom: 20px;
-  font-size: 1rem;
+  color: rgba(255, 255, 255, 0.8);
+  margin-bottom: 32px;
+  font-size: 1.1rem;
+  line-height: 1.6;
+  max-width: 500px;
+  margin-left: auto;
+  margin-right: auto;
 `;
 
 const FileList = styled.div`
-  margin-top: 20px;
+  margin-top: 32px;
   width: 100%;
-  max-width: 500px;
+  max-width: 600px;
+  animation: fadeIn 0.5s ease-out;
 `;
 
 const FileItem = styled.div`
-  padding: 10px 15px;
-  background: #e3f2fd;
-  border-radius: 8px;
-  border: 1px solid #2196f3;
-  margin-bottom: 10px;
+  padding: 16px 20px;
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(10px);
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  margin-bottom: 12px;
   display: flex;
   justify-content: space-between;
   align-items: center;
+  transition: all 0.3s ease;
+  animation: slideIn 0.3s ease-out;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: translateX(4px);
+  }
 `;
 
 const FileInfo = styled.div`
@@ -67,50 +105,59 @@ const FileInfo = styled.div`
 `;
 
 const FileName = styled.p`
-  font-weight: bold;
-  color: #1976d2;
+  font-weight: 600;
+  color: white;
   margin: 0;
+  font-size: 1rem;
 `;
 
 const FileSize = styled.p`
-  color: #666;
-  margin: 5px 0 0 0;
+  color: rgba(255, 255, 255, 0.7);
+  margin: 4px 0 0 0;
   font-size: 0.9rem;
 `;
 
 const RemoveButton = styled.button`
-  background: #f44336;
+  background: rgba(244, 67, 54, 0.8);
   color: white;
   border: none;
-  border-radius: 4px;
-  padding: 5px 10px;
+  border-radius: 12px;
+  padding: 8px 16px;
   cursor: pointer;
-  font-size: 0.8rem;
-  margin-left: 10px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  margin-left: 16px;
+  transition: all 0.3s ease;
 
   &:hover {
-    background: #d32f2f;
+    background: rgba(244, 67, 54, 1);
+    transform: scale(1.05);
   }
 `;
 
 const UploadButton = styled.button`
-  background: #28a745;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
   border: none;
-  border-radius: 6px;
-  padding: 12px 24px;
-  font-size: 1rem;
-  cursor: pointer;
-  margin-top: 20px;
+  border-radius: 16px;
+  padding: 16px 32px;
+  font-size: 1.1rem;
   font-weight: 600;
+  cursor: pointer;
+  margin-top: 24px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
 
   &:hover {
-    background: #1e7e34;
+    transform: translateY(-2px);
+    box-shadow: 0 12px 35px rgba(102, 126, 234, 0.4);
   }
 
   &:disabled {
-    background: #6c757d;
+    background: rgba(108, 117, 125, 0.6);
     cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
   }
 `;
 
@@ -120,25 +167,30 @@ const LoadingOverlay = styled.div`
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(0, 0, 0, 0.7);
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(10px);
   display: flex;
   justify-content: center;
   align-items: center;
   z-index: 1000;
+  animation: fadeIn 0.3s ease-out;
 `;
 
 const LoadingContent = styled.div`
-  background: white;
-  padding: 40px;
-  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(20px);
+  padding: 48px;
+  border-radius: 24px;
   text-align: center;
-  max-width: 400px;
+  max-width: 450px;
   width: 90%;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
 `;
 
 const LoadingIcon = styled.div`
-  font-size: 3rem;
-  margin-bottom: 20px;
+  font-size: 4rem;
+  margin-bottom: 24px;
   animation: spin 2s linear infinite;
   
   @keyframes spin {
@@ -148,48 +200,55 @@ const LoadingIcon = styled.div`
 `;
 
 const LoadingTitle = styled.h3`
-  color: #333;
-  margin-bottom: 15px;
+  color: white;
+  margin-bottom: 16px;
+  font-size: 1.5rem;
+  font-weight: 600;
 `;
 
 const LoadingText = styled.p`
-  color: #666;
-  margin-bottom: 10px;
+  color: rgba(255, 255, 255, 0.8);
+  margin-bottom: 16px;
+  font-size: 1rem;
 `;
 
 const ProgressBar = styled.div`
   width: 100%;
-  height: 8px;
-  background: #e9ecef;
-  border-radius: 4px;
+  height: 12px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
   overflow: hidden;
-  margin: 15px 0;
+  margin: 20px 0;
 `;
 
 const ProgressFill = styled.div`
   height: 100%;
-  background: #007bff;
+  background: linear-gradient(90deg, #667eea, #764ba2);
   width: ${props => props.progress}%;
   transition: width 0.3s ease;
+  border-radius: 6px;
 `;
 
 const ErrorMessage = styled.div`
-  color: #d32f2f;
-  background: #ffebee;
-  padding: 10px;
-  border-radius: 4px;
-  margin-top: 10px;
-  border: 1px solid #f44336;
+  color: #ff6b6b;
+  background: rgba(255, 107, 107, 0.1);
+  padding: 16px;
+  border-radius: 12px;
+  margin-top: 16px;
+  border: 1px solid rgba(255, 107, 107, 0.3);
+  backdrop-filter: blur(10px);
 `;
 
 const SummaryText = styled.div`
-  margin-top: 15px;
-  padding: 10px;
-  background: #f8f9fa;
-  border-radius: 6px;
-  border: 1px solid #dee2e6;
-  font-size: 0.9rem;
-  color: #495057;
+  margin-top: 20px;
+  padding: 16px;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  font-size: 1rem;
+  color: rgba(255, 255, 255, 0.9);
+  text-align: center;
 `;
 
 function VideoUploader({ onVideoUpload }) {
