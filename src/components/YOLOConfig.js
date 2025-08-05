@@ -2,15 +2,15 @@ import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 
 const ConfigContainer = styled.div`
-  color: white;
+  color: #2d3748;
 `;
 
 const Title = styled.h2`
-  color: white;
+  color: #2d3748;
   font-size: 1.5rem;
   font-weight: 700;
   margin-bottom: 24px;
-  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
 `;
 
 const Message = styled.div`
@@ -36,18 +36,18 @@ const Message = styled.div`
 const ConfigSection = styled.div`
   margin-bottom: 32px;
   padding: 24px;
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(10px);
+  background: #f7fafc;
   border-radius: 16px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
 `;
 
 const SectionTitle = styled.h3`
-  color: white;
+  color: #2d3748;
   font-size: 1.2rem;
   font-weight: 600;
   margin-bottom: 20px;
-  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
 `;
 
 const ConfigItem = styled.div`
@@ -55,7 +55,7 @@ const ConfigItem = styled.div`
   
   label {
     display: block;
-    color: rgba(255, 255, 255, 0.9);
+    color: #2d3748;
     font-weight: 600;
     margin-bottom: 8px;
   }
@@ -64,7 +64,7 @@ const ConfigItem = styled.div`
     width: 100%;
     height: 8px;
     border-radius: 4px;
-    background: rgba(255, 255, 255, 0.2);
+    background: #e2e8f0;
     outline: none;
     -webkit-appearance: none;
     
@@ -74,7 +74,7 @@ const ConfigItem = styled.div`
       width: 20px;
       height: 20px;
       border-radius: 50%;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      background: linear-gradient(135deg, #667eea 0%, #4facfe 100%);
       cursor: pointer;
       box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
     }
@@ -83,31 +83,30 @@ const ConfigItem = styled.div`
       width: 20px;
       height: 20px;
       border-radius: 50%;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      background: linear-gradient(135deg, #667eea 0%, #4facfe 100%);
       cursor: pointer;
       border: none;
       box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
     }
   }
   
-  input[type="number"], select {
+    input[type="number"], select {
     width: 100%;
     padding: 12px 16px;
-    border: 1px solid rgba(255, 255, 255, 0.3);
+    border: 1px solid #e2e8f0;
     border-radius: 12px;
-    background: rgba(255, 255, 255, 0.1);
-    color: white;
+    background: #ffffff;
+    color: #2d3748;
     font-size: 1rem;
-    backdrop-filter: blur(10px);
-    
+
     &:focus {
       outline: none;
-      border-color: rgba(255, 255, 255, 0.8);
-      box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.1);
+      border-color: #3182ce;
+      box-shadow: 0 0 0 3px rgba(49, 130, 206, 0.1);
     }
-    
+
     &::placeholder {
-      color: rgba(255, 255, 255, 0.6);
+      color: #a0aec0;
     }
   }
   
@@ -121,7 +120,7 @@ const ConfigItem = styled.div`
   
   small {
     display: block;
-    color: rgba(255, 255, 255, 0.7);
+    color: #4a5568;
     font-size: 0.9rem;
     margin-top: 4px;
   }
@@ -138,24 +137,24 @@ const ModelStatus = styled.div`
     justify-content: space-between;
     align-items: center;
     padding: 12px 0;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+    border-bottom: 1px solid #e2e8f0;
     
     &:last-child {
       border-bottom: none;
     }
     
     strong {
-      color: rgba(255, 255, 255, 0.9);
+      color: #2d3748;
       font-weight: 600;
     }
     
     .status-success {
-      color: #56ab2f;
+      color: #38a169;
       font-weight: 700;
     }
     
     .status-error {
-      color: #ff6b6b;
+      color: #e53e3e;
       font-weight: 700;
     }
   }
@@ -165,7 +164,7 @@ const ModelFiles = styled.div`
   margin-top: 20px;
   
   h4 {
-    color: white;
+    color: #2d3748;
     font-size: 1.1rem;
     font-weight: 600;
     margin-bottom: 16px;
@@ -176,22 +175,23 @@ const ModelFiles = styled.div`
     justify-content: space-between;
     align-items: center;
     padding: 12px 16px;
-    background: rgba(255, 255, 255, 0.1);
+    background: #f7fafc;
     border-radius: 12px;
     margin-bottom: 8px;
+    border: 1px solid #e2e8f0;
     
     .file-exists {
-      color: #56ab2f;
+      color: #38a169;
       font-weight: 600;
     }
     
     .file-missing {
-      color: #ff6b6b;
+      color: #e53e3e;
       font-weight: 600;
     }
     
     .file-size {
-      color: rgba(255, 255, 255, 0.7);
+      color: #718096;
       font-size: 0.9rem;
     }
   }
@@ -242,12 +242,12 @@ const Button = styled.button`
   }
 
   &.secondary {
-    background: rgba(255, 255, 255, 0.2);
-    color: white;
-    border: 1px solid rgba(255, 255, 255, 0.3);
+    background: #f7fafc;
+    color: #2d3748;
+    border: 1px solid #e2e8f0;
     
     &:hover {
-      background: rgba(255, 255, 255, 0.3);
+      background: #edf2f7;
       transform: translateY(-2px);
     }
   }
@@ -310,21 +310,20 @@ const ConfigInfo = styled.div`
   margin-top: 32px;
   
   h3 {
-    color: white;
+    color: #2d3748;
     font-size: 1.2rem;
     font-weight: 600;
     margin-bottom: 16px;
   }
   
   pre {
-    background: rgba(0, 0, 0, 0.3);
+    background: #2d3748;
     padding: 20px;
     border-radius: 12px;
-    color: rgba(255, 255, 255, 0.9);
+    color: #e2e8f0;
     font-size: 0.9rem;
     overflow-x: auto;
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border: 1px solid #e2e8f0;
   }
 `;
 

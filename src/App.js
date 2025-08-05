@@ -13,6 +13,49 @@ const AppContainer = styled.div`
   animation: fadeIn 0.6s ease-out;
 `;
 
+const GlobalMessage = styled.div`
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 1000;
+  padding: 16px 24px;
+  border-radius: 12px;
+  font-weight: 600;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+  animation: slideInRight 0.3s ease-out;
+  max-width: 400px;
+  
+  @keyframes slideInRight {
+    from {
+      opacity: 0;
+      transform: translateX(100%);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+  
+  &.success {
+    background: rgba(86, 171, 47, 0.2);
+    color: #56ab2f;
+    border: 1px solid rgba(86, 171, 47, 0.3);
+  }
+  
+  &.error {
+    background: rgba(255, 107, 107, 0.2);
+    color: #ff6b6b;
+    border: 1px solid rgba(255, 107, 107, 0.3);
+  }
+
+  &.info {
+    background: rgba(79, 172, 254, 0.2);
+    color: #4facfe;
+    border: 1px solid rgba(79, 172, 254, 0.3);
+  }
+`;
+
 const Header = styled.header`
   text-align: center;
   margin-bottom: 50px;
@@ -20,11 +63,11 @@ const Header = styled.header`
 `;
 
 const Title = styled.h1`
-  color: white;
+  color: #2d3748;
   font-size: 3.5rem;
   font-weight: 700;
   margin-bottom: 16px;
-  text-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
   letter-spacing: -0.02em;
   
   @media (max-width: 768px) {
@@ -33,9 +76,9 @@ const Title = styled.h1`
 `;
 
 const Subtitle = styled.p`
-  color: rgba(255, 255, 255, 0.9);
+  color: #2d3748;
   font-size: 1.25rem;
-  font-weight: 400;
+  font-weight: 500;
   max-width: 600px;
   margin: 0 auto;
   line-height: 1.6;
@@ -49,20 +92,19 @@ const TabContainer = styled.div`
   display: flex;
   justify-content: center;
   margin-bottom: 40px;
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(10px);
+  background: #f7fafc;
   border-radius: 20px;
   padding: 8px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  border: 1px solid #e2e8f0;
 `;
 
 const Tab = styled.button`
   padding: 16px 32px;
   margin: 0 4px;
   border: none;
-  background: ${props => props.active ? 'rgba(255, 255, 255, 0.9)' : 'transparent'};
-  color: ${props => props.active ? '#2d3748' : 'rgba(255, 255, 255, 0.8)'};
+  background: ${props => props.active ? '#3182ce' : 'transparent'};
+  color: ${props => props.active ? 'white' : '#4a5568'};
   border-radius: 16px;
   cursor: pointer;
   font-weight: 600;
@@ -72,9 +114,9 @@ const Tab = styled.button`
   overflow: hidden;
   
   &:hover {
-    background: ${props => props.active ? 'rgba(255, 255, 255, 0.95)' : 'rgba(255, 255, 255, 0.1)'};
+    background: ${props => props.active ? '#2c5aa0' : '#edf2f7'};
     transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
   }
   
   &:active {
@@ -117,6 +159,7 @@ function App() {
   const [uploadSummary, setUploadSummary] = useState(null);
   const [isLoadingGallery, setIsLoadingGallery] = useState(false);
   const [savedGroups, setSavedGroups] = useState({});
+  const [globalMessage, setGlobalMessage] = useState('');
 
   // 갤러리 탭이 활성화될 때 저장된 고양이 데이터 로드
   useEffect(() => {
@@ -124,6 +167,11 @@ function App() {
       loadSavedCats();
     }
   }, [activeTab]);
+
+  const showGlobalMessage = (message, type = 'info') => {
+    setGlobalMessage({ text: message, type });
+    setTimeout(() => setGlobalMessage(''), 3000);
+  };
 
   const loadSavedCats = async () => {
     try {
@@ -215,7 +263,7 @@ function App() {
   };
 
   const handleBackToProcessing = () => {
-    setCurrentStep('processing');
+    setCurrentStep('upload');
     setActiveTab('upload');
   };
 
@@ -225,6 +273,12 @@ function App() {
 
   return (
     <AppContainer>
+      {globalMessage && (
+        <GlobalMessage className={globalMessage.type}>
+          {globalMessage.text}
+        </GlobalMessage>
+      )}
+
       <Header>
         <Title>🐱 다둥이 매니저</Title>
         <Subtitle>AI가 영상에서 고양이를 자동으로 감지하고 관리해드립니다</Subtitle>
@@ -269,6 +323,7 @@ function App() {
             isLoading={isLoadingGallery}
             onRefresh={loadSavedCats}
             savedGroups={savedGroups}
+            onShowGlobalMessage={showGlobalMessage}
           />
         </TabContent>
       </MainContent>

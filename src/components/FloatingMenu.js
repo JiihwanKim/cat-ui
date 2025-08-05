@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import YOLOConfig from './YOLOConfig';
 
@@ -15,7 +15,7 @@ const MenuButton = styled.button`
   height: 70px;
   border-radius: 50%;
   border: none;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #667eea 0%, #4facfe 100%);
   color: white;
   font-size: 28px;
   cursor: pointer;
@@ -35,8 +35,8 @@ const MenuButton = styled.button`
   }
 
   &.active {
-    background: linear-gradient(135deg, #56ab2f 0%, #a8e6cf 100%);
-    box-shadow: 0 8px 25px rgba(86, 171, 47, 0.3);
+    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+    box-shadow: 0 8px 25px rgba(79, 172, 254, 0.3);
   }
 `;
 
@@ -47,14 +47,13 @@ const MenuPanel = styled.div`
   transform: translateY(-50%);
   width: 450px;
   max-height: 80vh;
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(20px);
+  background: #ffffff;
   border-radius: 24px;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
   overflow-y: auto;
   z-index: 999;
   animation: slideIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid #e2e8f0;
 
   @keyframes slideIn {
     from {
@@ -70,7 +69,7 @@ const MenuPanel = styled.div`
 
 const PanelHeader = styled.div`
   padding: 24px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  border-bottom: 1px solid #e2e8f0;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -78,18 +77,18 @@ const PanelHeader = styled.div`
 
 const PanelTitle = styled.h3`
   margin: 0;
-  color: white;
+  color: #2d3748;
   font-size: 1.3rem;
   font-weight: 600;
-  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
 `;
 
 const CloseButton = styled.button`
-  background: rgba(255, 255, 255, 0.2);
+  background: #f7fafc;
   border: none;
   font-size: 24px;
   cursor: pointer;
-  color: white;
+  color: #2d3748;
   padding: 8px;
   border-radius: 50%;
   width: 40px;
@@ -98,16 +97,118 @@ const CloseButton = styled.button`
   align-items: center;
   justify-content: center;
   transition: all 0.3s ease;
-  backdrop-filter: blur(10px);
 
   &:hover {
-    background: rgba(255, 255, 255, 0.3);
+    background: #edf2f7;
     transform: scale(1.1);
   }
 `;
 
 const PanelContent = styled.div`
   padding: 24px;
+  
+  /* YOLOConfig 컴포넌트 스타일 오버라이드 */
+  .yolo-config {
+    background: transparent !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+  
+  .yolo-config h2 {
+    color: #2d3748 !important;
+    font-size: 1.2rem !important;
+    margin-bottom: 16px !important;
+  }
+  
+  .config-section {
+    background: #f7fafc !important;
+    border-left-color: #3182ce !important;
+    margin-bottom: 20px !important;
+  }
+  
+  .config-section h3 {
+    color: #2d3748 !important;
+  }
+  
+  .config-item {
+    background: #ffffff !important;
+    border-color: #e2e8f0 !important;
+  }
+  
+  .config-item label {
+    color: #2d3748 !important;
+  }
+  
+  .config-item input[type="number"],
+  .config-item select {
+    background: #ffffff !important;
+    border-color: #e2e8f0 !important;
+    color: #2d3748 !important;
+  }
+  
+  .config-item span {
+    color: #3182ce !important;
+  }
+  
+  .config-item small {
+    color: #718096 !important;
+  }
+  
+  .preset-button {
+    background: #ffffff !important;
+    color: #3182ce !important;
+    border-color: #3182ce !important;
+  }
+  
+  .preset-button:hover {
+    background: #3182ce !important;
+    color: #ffffff !important;
+  }
+  
+  .action-buttons button[type="submit"] {
+    background: #38a169 !important;
+    color: #ffffff !important;
+  }
+  
+  .action-buttons button[type="submit"]:hover:not(:disabled) {
+    background: #2f855a !important;
+  }
+  
+  .action-buttons button[type="button"] {
+    background: #718096 !important;
+    color: #ffffff !important;
+  }
+  
+  .action-buttons button[type="button"]:hover:not(:disabled) {
+    background: #4a5568 !important;
+  }
+  
+  .config-info {
+    background: #f7fafc !important;
+    border-color: #e2e8f0 !important;
+  }
+  
+  .config-info h3 {
+    color: #2d3748 !important;
+  }
+  
+  .config-info pre {
+    background: #2d3748 !important;
+    color: #e2e8f0 !important;
+  }
+  
+  .message.success {
+    background-color: #d4edda !important;
+    color: #155724 !important;
+    border-color: #c3e6cb !important;
+  }
+  
+  .message.error {
+    background-color: #f8d7da !important;
+    color: #721c24 !important;
+    border-color: #f5c6cb !important;
+  }
 `;
 
 const StatsPanel = styled.div`
@@ -119,7 +220,7 @@ const StatItem = styled.div`
   justify-content: space-between;
   align-items: center;
   padding: 16px 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  border-bottom: 1px solid #e2e8f0;
 
   &:last-child {
     border-bottom: none;
@@ -128,15 +229,58 @@ const StatItem = styled.div`
 
 const StatLabel = styled.span`
   font-weight: 600;
-  color: rgba(255, 255, 255, 0.9);
+  color: #4a5568;
   font-size: 1rem;
 `;
 
 const StatValue = styled.span`
-  color: rgba(102, 126, 234, 1);
+  color: #3182ce;
   font-weight: 700;
   font-size: 1.1rem;
-  text-shadow: 0 2px 10px rgba(102, 126, 234, 0.3);
+  text-shadow: 0 2px 10px rgba(49, 130, 206, 0.2);
+`;
+
+const LoadingContainer = styled.div`
+  text-align: center;
+  padding: 40px 20px;
+  color: #718096;
+`;
+
+const LoadingIcon = styled.div`
+  font-size: 2rem;
+  margin-bottom: 16px;
+  animation: spin 1s linear infinite;
+  
+  @keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+`;
+
+const ErrorMessage = styled.div`
+  text-align: center;
+  padding: 20px;
+  color: #e53e3e;
+  background: rgba(229, 62, 62, 0.1);
+  border-radius: 12px;
+  margin: 20px 0;
+`;
+
+const RefreshButton = styled.button`
+  background: #f7fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 8px 16px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  color: #4a5568;
+  transition: all 0.3s ease;
+  margin-left: 12px;
+
+  &:hover {
+    background: #edf2f7;
+    transform: scale(1.05);
+  }
 `;
 
 const InfoPanel = styled.div`
@@ -148,15 +292,15 @@ const InfoSection = styled.div`
 `;
 
 const InfoTitle = styled.h4`
-  color: white;
+  color: #2d3748;
   margin-bottom: 12px;
   font-size: 1.1rem;
   font-weight: 600;
-  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
 `;
 
 const InfoText = styled.p`
-  color: rgba(255, 255, 255, 0.8);
+  color: #4a5568;
   line-height: 1.6;
   margin: 8px 0;
   font-size: 0.95rem;
@@ -164,12 +308,42 @@ const InfoText = styled.p`
 
 const FloatingMenu = () => {
   const [activeMenu, setActiveMenu] = useState(null);
+  const [statistics, setStatistics] = useState(null);
+  const [videoList, setVideoList] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  const fetchStatistics = async () => {
+    try {
+      setLoading(true);
+      setError('');
+      
+      const response = await fetch('http://localhost:5000/api/statistics');
+      const data = await response.json();
+      
+      if (data.success) {
+        setStatistics(data.statistics);
+        setVideoList(data.video_list || []);
+      } else {
+        setError(data.error || '통계 정보를 불러오는데 실패했습니다.');
+      }
+    } catch (error) {
+      console.error('통계 정보 조회 실패:', error);
+      setError('서버에 연결할 수 없습니다.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleMenuClick = (menu) => {
     if (activeMenu === menu) {
       setActiveMenu(null);
     } else {
       setActiveMenu(menu);
+      // 통계 메뉴가 열릴 때 데이터 새로고침
+      if (menu === 'stats') {
+        fetchStatistics();
+      }
     }
   };
 
@@ -197,29 +371,86 @@ const FloatingMenu = () => {
           <>
             <PanelHeader>
               <PanelTitle>📊 통계</PanelTitle>
-              <CloseButton onClick={closeMenu}>×</CloseButton>
+              <div style={{ display: 'flex', alignItems: 'center' }}>
+                <RefreshButton onClick={fetchStatistics} disabled={loading}>
+                  {loading ? '🔄' : '🔄'}
+                </RefreshButton>
+                <CloseButton onClick={closeMenu}>×</CloseButton>
+              </div>
             </PanelHeader>
             <StatsPanel>
-              <StatItem>
-                <StatLabel>처리된 영상</StatLabel>
-                <StatValue>12개</StatValue>
-              </StatItem>
-              <StatItem>
-                <StatLabel>감지된 고양이</StatLabel>
-                <StatValue>47마리</StatValue>
-              </StatItem>
-              <StatItem>
-                <StatLabel>총 처리 시간</StatLabel>
-                <StatValue>2시간 34분</StatValue>
-              </StatItem>
-              <StatItem>
-                <StatLabel>평균 정확도</StatLabel>
-                <StatValue>94.2%</StatValue>
-              </StatItem>
-              <StatItem>
-                <StatLabel>저장된 이미지</StatLabel>
-                <StatValue>156개</StatValue>
-              </StatItem>
+              {loading ? (
+                <LoadingContainer>
+                  <LoadingIcon>⏳</LoadingIcon>
+                  <p>통계 정보를 불러오는 중...</p>
+                </LoadingContainer>
+              ) : error ? (
+                <ErrorMessage>
+                  <div>❌ {error}</div>
+                </ErrorMessage>
+              ) : (
+                <>
+                  <div style={{ marginBottom: '16px' }}>
+                    <h4 style={{ color: '#2d3748', margin: '0 0 12px 0', fontSize: '1rem' }}>
+                      📊 소스데이터
+                    </h4>
+                  </div>
+                  <StatItem>
+                    <StatLabel>영상</StatLabel>
+                    <StatValue>{statistics?.video_count || 0}개</StatValue>
+                  </StatItem>
+                  <StatItem>
+                    <StatLabel>이미지 수</StatLabel>
+                    <StatValue>{statistics?.cropped_count || 0}개</StatValue>
+                  </StatItem>
+                  <StatItem>
+                    <StatLabel>라벨링된 이미지</StatLabel>
+                    <StatValue>{statistics?.labeled_count || 0}개</StatValue>
+                  </StatItem>
+                  
+                  {statistics?.label_counts && Object.keys(statistics.label_counts).length > 0 && (
+                    <>
+                      <div style={{ marginTop: '24px', marginBottom: '16px' }}>
+                        <h4 style={{ color: '#2d3748', margin: '0 0 12px 0', fontSize: '1rem' }}>
+                          🐱 고양이별 이미지 수
+                        </h4>
+                      </div>
+                      {Object.entries(statistics.label_counts)
+                        .sort(([,a], [,b]) => b - a) // 개수 기준 내림차순 정렬
+                        .map(([catName, count]) => (
+                          <StatItem key={catName}>
+                            <StatLabel style={{ fontSize: '0.9rem' }}>
+                              {catName}
+                            </StatLabel>
+                            <StatValue style={{ fontSize: '0.9rem' }}>
+                              {count}개
+                            </StatValue>
+                          </StatItem>
+                        ))}
+                    </>
+                  )}
+                  
+                  {videoList.length > 0 && (
+                    <>
+                      <div style={{ marginTop: '24px', marginBottom: '16px' }}>
+                        <h4 style={{ color: '#2d3748', margin: '0 0 12px 0', fontSize: '1rem' }}>
+                          📹 최근 업로드된 영상
+                        </h4>
+                      </div>
+                      {videoList.slice(0, 3).map((video, index) => (
+                        <StatItem key={index}>
+                          <StatLabel style={{ fontSize: '0.9rem', maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                            {video.filename}
+                          </StatLabel>
+                          <StatValue style={{ fontSize: '0.9rem' }}>
+                            {video.size_mb}MB
+                          </StatValue>
+                        </StatItem>
+                      ))}
+                    </>
+                  )}
+                </>
+              )}
             </StatsPanel>
           </>
         );

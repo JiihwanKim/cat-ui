@@ -8,20 +8,19 @@ const UploadContainer = styled.div`
   align-items: center;
   justify-content: center;
   padding: 80px 40px;
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(20px);
+  background: #ffffff;
   border-radius: 24px;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
-  border: 2px dashed rgba(255, 255, 255, 0.3);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  border: 2px dashed #e2e8f0;
   transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
   overflow: hidden;
 
   &:hover {
-    border-color: rgba(255, 255, 255, 0.6);
-    background: rgba(255, 255, 255, 0.15);
+    border-color: #3182ce;
+    background: #f7fafc;
     transform: translateY(-4px);
-    box-shadow: 0 25px 50px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
   }
 
   &::before {
@@ -31,7 +30,7 @@ const UploadContainer = styled.div`
     left: -100%;
     width: 100%;
     height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+    background: linear-gradient(90deg, transparent, rgba(49, 130, 206, 0.1), transparent);
     transition: left 0.6s;
   }
 
@@ -52,20 +51,20 @@ const Dropzone = styled.div`
 const UploadIcon = styled.div`
   font-size: 5rem;
   margin-bottom: 24px;
-  color: rgba(255, 255, 255, 0.9);
+  color: #3182ce;
   animation: pulse 2s infinite;
 `;
 
 const UploadText = styled.h2`
-  color: white;
+  color: #2d3748;
   margin-bottom: 16px;
   font-size: 2rem;
   font-weight: 600;
-  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
 `;
 
 const UploadDescription = styled.p`
-  color: rgba(255, 255, 255, 0.8);
+  color: #4a5568;
   margin-bottom: 32px;
   font-size: 1.1rem;
   line-height: 1.6;
@@ -83,10 +82,9 @@ const FileList = styled.div`
 
 const FileItem = styled.div`
   padding: 16px 20px;
-  background: rgba(255, 255, 255, 0.15);
-  backdrop-filter: blur(10px);
+  background: #f7fafc;
   border-radius: 16px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid #e2e8f0;
   margin-bottom: 12px;
   display: flex;
   justify-content: space-between;
@@ -95,7 +93,7 @@ const FileItem = styled.div`
   animation: slideIn 0.3s ease-out;
 
   &:hover {
-    background: rgba(255, 255, 255, 0.2);
+    background: #edf2f7;
     transform: translateX(4px);
   }
 `;
@@ -106,13 +104,13 @@ const FileInfo = styled.div`
 
 const FileName = styled.p`
   font-weight: 600;
-  color: white;
+  color: #2d3748;
   margin: 0;
   font-size: 1rem;
 `;
 
 const FileSize = styled.p`
-  color: rgba(255, 255, 255, 0.7);
+  color: #718096;
   margin: 4px 0 0 0;
   font-size: 0.9rem;
 `;
@@ -136,7 +134,7 @@ const RemoveButton = styled.button`
 `;
 
 const UploadButton = styled.button`
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #667eea 0%, #4facfe 100%);
   color: white;
   border: none;
   border-radius: 16px;
@@ -177,15 +175,14 @@ const LoadingOverlay = styled.div`
 `;
 
 const LoadingContent = styled.div`
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(20px);
+  background: #ffffff;
   padding: 48px;
   border-radius: 24px;
   text-align: center;
   max-width: 450px;
   width: 90%;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
 `;
 
 const LoadingIcon = styled.div`
@@ -200,14 +197,14 @@ const LoadingIcon = styled.div`
 `;
 
 const LoadingTitle = styled.h3`
-  color: white;
+  color: #2d3748;
   margin-bottom: 16px;
   font-size: 1.5rem;
   font-weight: 600;
 `;
 
 const LoadingText = styled.p`
-  color: rgba(255, 255, 255, 0.8);
+  color: #4a5568;
   margin-bottom: 16px;
   font-size: 1rem;
 `;
@@ -223,7 +220,7 @@ const ProgressBar = styled.div`
 
 const ProgressFill = styled.div`
   height: 100%;
-  background: linear-gradient(90deg, #667eea, #764ba2);
+      background: linear-gradient(90deg, #667eea, #4facfe);
   width: ${props => props.progress}%;
   transition: width 0.3s ease;
   border-radius: 6px;
@@ -242,12 +239,11 @@ const ErrorMessage = styled.div`
 const SummaryText = styled.div`
   margin-top: 20px;
   padding: 16px;
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(10px);
+  background: #f7fafc;
   border-radius: 16px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid #e2e8f0;
   font-size: 1rem;
-  color: rgba(255, 255, 255, 0.9);
+  color: #2d3748;
   text-align: center;
 `;
 

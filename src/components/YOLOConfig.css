@@ -8,7 +8,7 @@
 }
 
 .yolo-config h2 {
-  color: #333;
+  color: #2d3748;
   margin-bottom: 20px;
   text-align: center;
   font-size: 24px;
@@ -36,13 +36,13 @@
 .config-section {
   margin-bottom: 30px;
   padding: 20px;
-  background: #f8f9fa;
+  background: #f7fafc;
   border-radius: 8px;
-  border-left: 4px solid #007bff;
+  border-left: 4px solid #3182ce;
 }
 
 .config-section h3 {
-  color: #495057;
+  color: #2d3748;
   margin-bottom: 15px;
   font-size: 18px;
 }
@@ -52,14 +52,14 @@
   padding: 15px;
   background: white;
   border-radius: 6px;
-  border: 1px solid #e9ecef;
+  border: 1px solid #e2e8f0;
 }
 
 .config-item label {
   display: block;
   margin-bottom: 8px;
   font-weight: 600;
-  color: #495057;
+  color: #2d3748;
 }
 
 .config-item input[type="range"] {
@@ -70,32 +70,35 @@
 .config-item input[type="number"] {
   width: 100px;
   padding: 8px 12px;
-  border: 1px solid #ced4da;
+  border: 1px solid #e2e8f0;
   border-radius: 4px;
   font-size: 14px;
+  background: #ffffff;
+  color: #2d3748;
 }
 
 .config-item select {
   width: 200px;
   padding: 8px 12px;
-  border: 1px solid #ced4da;
+  border: 1px solid #e2e8f0;
   border-radius: 4px;
   font-size: 14px;
-  background: white;
+  background: #ffffff;
+  color: #2d3748;
 }
 
 .config-item span {
   display: inline-block;
   margin-left: 10px;
   font-weight: 600;
-  color: #007bff;
+  color: #3182ce;
   min-width: 40px;
 }
 
 .config-item small {
   display: block;
   margin-top: 5px;
-  color: #6c757d;
+  color: #718096;
   font-size: 12px;
 }
 
@@ -112,9 +115,9 @@
 
 .preset-button {
   padding: 10px 20px;
-  border: 2px solid #007bff;
-  background: white;
-  color: #007bff;
+  border: 2px solid #3182ce;
+  background: #ffffff;
+  color: #3182ce;
   border-radius: 6px;
   cursor: pointer;
   font-weight: 500;
@@ -122,8 +125,8 @@
 }
 
 .preset-button:hover {
-  background: #007bff;
-  color: white;
+  background: #3182ce;
+  color: #ffffff;
 }
 
 .action-buttons {
@@ -145,21 +148,21 @@
 }
 
 .action-buttons button[type="submit"] {
-  background: #28a745;
-  color: white;
+  background: #38a169;
+  color: #ffffff;
 }
 
 .action-buttons button[type="submit"]:hover:not(:disabled) {
-  background: #218838;
+  background: #2f855a;
 }
 
 .action-buttons button[type="button"] {
-  background: #6c757d;
-  color: white;
+  background: #718096;
+  color: #ffffff;
 }
 
 .action-buttons button[type="button"]:hover:not(:disabled) {
-  background: #5a6268;
+  background: #4a5568;
 }
 
 .action-buttons button:disabled {
@@ -170,13 +173,13 @@
 .config-info {
   margin-top: 30px;
   padding: 20px;
-  background: #f8f9fa;
+  background: #f7fafc;
   border-radius: 8px;
-  border: 1px solid #e9ecef;
+  border: 1px solid #e2e8f0;
 }
 
 .config-info h3 {
-  color: #495057;
+  color: #2d3748;
   margin-bottom: 15px;
   font-size: 16px;
 }
@@ -220,50 +223,12 @@
   }
 }
 
-/* 다크 모드 지원 */
-@media (prefers-color-scheme: dark) {
-  .yolo-config {
-    background: #2d3748;
-    color: #e2e8f0;
-  }
-  
-  .config-section {
-    background: #4a5568;
-    border-left-color: #4299e1;
-  }
-  
-  .config-item {
-    background: #4a5568;
-    border-color: #718096;
-  }
-  
-  .config-item label {
-    color: #e2e8f0;
-  }
-  
-  .config-item input[type="number"],
-  .config-item select {
-    background: #2d3748;
-    border-color: #718096;
-    color: #e2e8f0;
-  }
-  
-  .config-info {
-    background: #4a5568;
-    border-color: #718096;
-  }
-  
-  .config-info h3 {
-    color: #e2e8f0;
-  }
-}
-
 /* 모델 상태 섹션 스타일 */
 .model-status {
   padding: 15px;
-  background: white;
+  background: #ffffff;
   border-radius: 6px;
-  border: 1px solid #e9ecef;
+  border: 1px solid #e2e8f0;
 }
 
 .status-item {
@@ -272,17 +237,17 @@
   align-items: center;
   margin-bottom: 15px;
   padding: 10px;
-  background: #f8f9fa;
+  background: #f7fafc;
   border-radius: 4px;
 }
 
 .status-success {
-  color: #28a745;
+  color: #38a169;
   font-weight: 600;
 }
 
 .status-error {
-  color: #dc3545;
+  color: #e53e3e;
   font-weight: 600;
 }
 
@@ -292,7 +257,7 @@
 
 .model-files h4 {
   margin-bottom: 10px;
-  color: #495057;
+  color: #2d3748;
   font-size: 14px;
 }
 
@@ -302,30 +267,30 @@
   align-items: center;
   padding: 8px 12px;
   margin-bottom: 8px;
-  background: #f8f9fa;
+  background: #f7fafc;
   border-radius: 4px;
-  border: 1px solid #e9ecef;
+  border: 1px solid #e2e8f0;
 }
 
 .file-exists {
-  color: #28a745;
+  color: #38a169;
   font-weight: 500;
 }
 
 .file-missing {
-  color: #6c757d;
+  color: #718096;
   font-weight: 500;
 }
 
 .file-size {
-  color: #6c757d;
+  color: #718096;
   font-size: 12px;
 }
 
 .download-button {
   padding: 4px 12px;
-  background: #007bff;
-  color: white;
+  background: #3182ce;
+  color: #ffffff;
   border: none;
   border-radius: 4px;
   font-size: 12px;
@@ -334,11 +299,11 @@
 }
 
 .download-button:hover:not(:disabled) {
-  background: #0056b3;
+  background: #2c5aa0;
 }
 
 .download-button:disabled {
-  background: #6c757d;
+  background: #718096;
   cursor: not-allowed;
 }
 
@@ -351,9 +316,9 @@
 .refresh-button,
 .reload-button {
   padding: 8px 16px;
-  border: 1px solid #007bff;
-  background: white;
-  color: #007bff;
+  border: 1px solid #3182ce;
+  background: #ffffff;
+  color: #3182ce;
   border-radius: 4px;
   cursor: pointer;
   font-size: 12px;
@@ -362,58 +327,12 @@
 
 .refresh-button:hover,
 .reload-button:hover:not(:disabled) {
-  background: #007bff;
-  color: white;
+  background: #3182ce;
+  color: #ffffff;
 }
 
 .reload-button:disabled {
-  border-color: #6c757d;
-  color: #6c757d;
+  border-color: #718096;
+  color: #718096;
   cursor: not-allowed;
-}
-
-/* 다크 모드에서 모델 상태 스타일 */
-@media (prefers-color-scheme: dark) {
-  .model-status {
-    background: #4a5568;
-    border-color: #718096;
-  }
-  
-  .status-item {
-    background: #2d3748;
-  }
-  
-  .model-files h4 {
-    color: #e2e8f0;
-  }
-  
-  .model-file {
-    background: #2d3748;
-    border-color: #718096;
-  }
-  
-  .file-exists {
-    color: #48bb78;
-  }
-  
-  .file-missing {
-    color: #a0aec0;
-  }
-  
-  .file-size {
-    color: #a0aec0;
-  }
-  
-  .refresh-button,
-  .reload-button {
-    background: #4a5568;
-    border-color: #4299e1;
-    color: #4299e1;
-  }
-  
-  .refresh-button:hover,
-  .reload-button:hover:not(:disabled) {
-    background: #4299e1;
-    color: white;
-  }
 } 
