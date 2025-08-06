@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
-import YOLOConfig from './YOLOConfig';
 
 const FloatingMenuContainer = styled.div`
   position: fixed;
@@ -19,8 +18,8 @@ const MenuButton = styled.button`
   color: white;
   font-size: 28px;
   cursor: pointer;
-  box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.2);
+  transition: all 0.2s ease;
   margin-bottom: 16px;
   display: flex;
   align-items: center;
@@ -30,13 +29,13 @@ const MenuButton = styled.button`
 
   &:hover {
     background: linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%);
-    transform: scale(1.1) translateY(-2px);
-    box-shadow: 0 12px 35px rgba(102, 126, 234, 0.4);
+    transform: scale(1.05);
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.3);
   }
 
   &.active {
     background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-    box-shadow: 0 8px 25px rgba(79, 172, 254, 0.3);
+    box-shadow: 0 4px 15px rgba(79, 172, 254, 0.2);
   }
 `;
 
@@ -45,20 +44,20 @@ const MenuPanel = styled.div`
   right: 110px;
   top: 50%;
   transform: translateY(-50%);
-  width: 450px;
+  width: 350px;
   max-height: 80vh;
   background: #ffffff;
   border-radius: 24px;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
   overflow-y: auto;
   z-index: 999;
-  animation: slideIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  animation: slideIn 0.2s ease;
   border: 1px solid #e2e8f0;
 
   @keyframes slideIn {
     from {
       opacity: 0;
-      transform: translateY(-50%) translateX(30px);
+      transform: translateY(-50%) translateX(15px);
     }
     to {
       opacity: 1;
@@ -96,118 +95,84 @@ const CloseButton = styled.button`
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.3s ease;
+  transition: all 0.2s ease;
 
   &:hover {
     background: #edf2f7;
-    transform: scale(1.1);
+    transform: scale(1.05);
   }
 `;
 
 const PanelContent = styled.div`
   padding: 24px;
-  
-  /* YOLOConfig 컴포넌트 스타일 오버라이드 */
-  .yolo-config {
-    background: transparent !important;
-    box-shadow: none !important;
-    padding: 0 !important;
-    margin: 0 !important;
+`;
+
+const DarkModeToggle = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px;
+  background: #f7fafc;
+  border-radius: 16px;
+  border: 1px solid #e2e8f0;
+  margin-bottom: 20px;
+`;
+
+const ToggleLabel = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 12px;
+`;
+
+const ToggleText = styled.span`
+  font-weight: 600;
+  color: #2d3748;
+  font-size: 1.1rem;
+`;
+
+const ToggleSwitch = styled.label`
+  position: relative;
+  display: inline-block;
+  width: 60px;
+  height: 34px;
+`;
+
+const ToggleInput = styled.input`
+  opacity: 0;
+  width: 0;
+  height: 0;
+
+  &:checked + span {
+    background: linear-gradient(135deg, #667eea 0%, #4facfe 100%);
   }
-  
-  .yolo-config h2 {
-    color: #2d3748 !important;
-    font-size: 1.2rem !important;
-    margin-bottom: 16px !important;
+
+  &:checked + span:before {
+    transform: translateX(26px);
   }
-  
-  .config-section {
-    background: #f7fafc !important;
-    border-left-color: #3182ce !important;
-    margin-bottom: 20px !important;
-  }
-  
-  .config-section h3 {
-    color: #2d3748 !important;
-  }
-  
-  .config-item {
-    background: #ffffff !important;
-    border-color: #e2e8f0 !important;
-  }
-  
-  .config-item label {
-    color: #2d3748 !important;
-  }
-  
-  .config-item input[type="number"],
-  .config-item select {
-    background: #ffffff !important;
-    border-color: #e2e8f0 !important;
-    color: #2d3748 !important;
-  }
-  
-  .config-item span {
-    color: #3182ce !important;
-  }
-  
-  .config-item small {
-    color: #718096 !important;
-  }
-  
-  .preset-button {
-    background: #ffffff !important;
-    color: #3182ce !important;
-    border-color: #3182ce !important;
-  }
-  
-  .preset-button:hover {
-    background: #3182ce !important;
-    color: #ffffff !important;
-  }
-  
-  .action-buttons button[type="submit"] {
-    background: #38a169 !important;
-    color: #ffffff !important;
-  }
-  
-  .action-buttons button[type="submit"]:hover:not(:disabled) {
-    background: #2f855a !important;
-  }
-  
-  .action-buttons button[type="button"] {
-    background: #718096 !important;
-    color: #ffffff !important;
-  }
-  
-  .action-buttons button[type="button"]:hover:not(:disabled) {
-    background: #4a5568 !important;
-  }
-  
-  .config-info {
-    background: #f7fafc !important;
-    border-color: #e2e8f0 !important;
-  }
-  
-  .config-info h3 {
-    color: #2d3748 !important;
-  }
-  
-  .config-info pre {
-    background: #2d3748 !important;
-    color: #e2e8f0 !important;
-  }
-  
-  .message.success {
-    background-color: #d4edda !important;
-    color: #155724 !important;
-    border-color: #c3e6cb !important;
-  }
-  
-  .message.error {
-    background-color: #f8d7da !important;
-    color: #721c24 !important;
-    border-color: #f5c6cb !important;
+`;
+
+const ToggleSlider = styled.span`
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: #cbd5e0;
+  transition: 0.3s;
+  border-radius: 34px;
+
+  &:before {
+    position: absolute;
+    content: "";
+    height: 26px;
+    width: 26px;
+    left: 4px;
+    bottom: 4px;
+    background: white;
+    transition: 0.3s;
+    border-radius: 50%;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
   }
 `;
 
@@ -274,12 +239,12 @@ const RefreshButton = styled.button`
   font-size: 0.9rem;
   cursor: pointer;
   color: #4a5568;
-  transition: all 0.3s ease;
+  transition: all 0.2s ease;
   margin-left: 12px;
 
   &:hover {
     background: #edf2f7;
-    transform: scale(1.05);
+    transform: scale(1.02);
   }
 `;
 
@@ -306,7 +271,7 @@ const InfoText = styled.p`
   font-size: 0.95rem;
 `;
 
-const FloatingMenu = () => {
+const FloatingMenu = ({ darkMode, onDarkModeToggle }) => {
   const [activeMenu, setActiveMenu] = useState(null);
   const [statistics, setStatistics] = useState(null);
   const [videoList, setVideoList] = useState([]);
@@ -361,7 +326,20 @@ const FloatingMenu = () => {
               <CloseButton onClick={closeMenu}>×</CloseButton>
             </PanelHeader>
             <PanelContent>
-              <YOLOConfig />
+              <DarkModeToggle>
+                <ToggleLabel>
+                  <span>🌙</span>
+                  <ToggleText>다크 모드</ToggleText>
+                </ToggleLabel>
+                <ToggleSwitch>
+                  <ToggleInput
+                    type="checkbox"
+                    checked={darkMode}
+                    onChange={onDarkModeToggle}
+                  />
+                  <ToggleSlider />
+                </ToggleSwitch>
+              </DarkModeToggle>
             </PanelContent>
           </>
         );

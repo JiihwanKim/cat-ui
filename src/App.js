@@ -10,7 +10,10 @@ const AppContainer = styled.div`
   margin: 0 auto;
   padding: 40px 20px;
   min-height: 100vh;
-  animation: fadeIn 0.6s ease-out;
+  animation: fadeIn 0.3s ease;
+  background: ${props => props.darkMode ? '#1a202c' : '#ffffff'};
+  color: ${props => props.darkMode ? '#e2e8f0' : '#2d3748'};
+  transition: all 0.2s ease;
 `;
 
 const GlobalMessage = styled.div`
@@ -22,14 +25,14 @@ const GlobalMessage = styled.div`
   border-radius: 12px;
   font-weight: 600;
   backdrop-filter: blur(10px);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
-  animation: slideInRight 0.3s ease-out;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  animation: slideInRight 0.2s ease;
   max-width: 400px;
   
   @keyframes slideInRight {
     from {
       opacity: 0;
-      transform: translateX(100%);
+      transform: translateX(50px);
     }
     to {
       opacity: 1;
@@ -59,16 +62,17 @@ const GlobalMessage = styled.div`
 const Header = styled.header`
   text-align: center;
   margin-bottom: 50px;
-  animation: fadeIn 0.8s ease-out;
+  animation: fadeIn 0.4s ease;
 `;
 
 const Title = styled.h1`
-  color: #2d3748;
+  color: ${props => props.darkMode ? '#e2e8f0' : '#2d3748'};
   font-size: 3.5rem;
   font-weight: 700;
   margin-bottom: 16px;
   text-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
   letter-spacing: -0.02em;
+  transition: color 0.3s ease;
   
   @media (max-width: 768px) {
     font-size: 2.5rem;
@@ -76,12 +80,13 @@ const Title = styled.h1`
 `;
 
 const Subtitle = styled.p`
-  color: #2d3748;
+  color: ${props => props.darkMode ? '#a0aec0' : '#2d3748'};
   font-size: 1.25rem;
   font-weight: 500;
   max-width: 600px;
   margin: 0 auto;
   line-height: 1.6;
+  transition: color 0.3s ease;
   
   @media (max-width: 768px) {
     font-size: 1.1rem;
@@ -92,11 +97,12 @@ const TabContainer = styled.div`
   display: flex;
   justify-content: center;
   margin-bottom: 40px;
-  background: #f7fafc;
+  background: ${props => props.darkMode ? '#2d3748' : '#f7fafc'};
   border-radius: 20px;
   padding: 8px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-  border: 1px solid #e2e8f0;
+  border: 1px solid ${props => props.darkMode ? '#4a5568' : '#e2e8f0'};
+  transition: all 0.3s ease;
 `;
 
 const Tab = styled.button`
@@ -104,19 +110,19 @@ const Tab = styled.button`
   margin: 0 4px;
   border: none;
   background: ${props => props.active ? '#3182ce' : 'transparent'};
-  color: ${props => props.active ? 'white' : '#4a5568'};
+  color: ${props => props.active ? 'white' : props.darkMode ? '#a0aec0' : '#4a5568'};
   border-radius: 16px;
   cursor: pointer;
   font-weight: 600;
   font-size: 1rem;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.15s ease;
   position: relative;
   overflow: hidden;
   
   &:hover {
-    background: ${props => props.active ? '#2c5aa0' : '#edf2f7'};
-    transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+    background: ${props => props.active ? '#2c5aa0' : props.darkMode ? '#4a5568' : '#edf2f7'};
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   }
   
   &:active {
@@ -130,8 +136,8 @@ const Tab = styled.button`
     left: -100%;
     width: 100%;
     height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-    transition: left 0.5s;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.05), transparent);
+    transition: left 0.2s ease;
   }
   
   &:hover::before {
@@ -143,12 +149,23 @@ const MainContent = styled.main`
   display: flex;
   flex-direction: column;
   gap: 40px;
-  animation: fadeIn 1s ease-out;
+  animation: fadeIn 0.3s ease;
 `;
 
 const TabContent = styled.div`
   display: ${props => props.active ? 'block' : 'none'};
-  animation: ${props => props.active ? 'slideIn 0.5s ease-out' : 'none'};
+  animation: ${props => props.active ? 'slideIn 0.2s ease' : 'none'};
+  
+  @keyframes slideIn {
+    from {
+      opacity: 0;
+      transform: translateY(5px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
 `;
 
 function App() {
@@ -160,6 +177,7 @@ function App() {
   const [isLoadingGallery, setIsLoadingGallery] = useState(false);
   const [savedGroups, setSavedGroups] = useState({});
   const [globalMessage, setGlobalMessage] = useState('');
+  const [darkMode, setDarkMode] = useState(false);
 
   // 갤러리 탭이 활성화될 때 저장된 고양이 데이터 로드
   useEffect(() => {
@@ -171,6 +189,10 @@ function App() {
   const showGlobalMessage = (message, type = 'info') => {
     setGlobalMessage({ text: message, type });
     setTimeout(() => setGlobalMessage(''), 3000);
+  };
+
+  const handleDarkModeToggle = () => {
+    setDarkMode(!darkMode);
   };
 
   const loadSavedCats = async () => {
@@ -272,7 +294,7 @@ function App() {
   };
 
   return (
-    <AppContainer>
+    <AppContainer darkMode={darkMode}>
       {globalMessage && (
         <GlobalMessage className={globalMessage.type}>
           {globalMessage.text}
@@ -280,29 +302,31 @@ function App() {
       )}
 
       <Header>
-        <Title>🐱 다둥이 매니저</Title>
-        <Subtitle>AI가 영상에서 고양이를 자동으로 감지하고 관리해드립니다</Subtitle>
+        <Title darkMode={darkMode}>🐱 다둥이 매니저</Title>
+        <Subtitle darkMode={darkMode}>AI가 영상에서 고양이를 자동으로 감지하고 관리해드립니다</Subtitle>
       </Header>
 
-      <TabContainer>
+      <TabContainer darkMode={darkMode}>
         <Tab 
           active={activeTab === 'upload'} 
           onClick={() => handleTabChange('upload')}
+          darkMode={darkMode}
         >
           📹 영상 업로드
         </Tab>
         <Tab 
           active={activeTab === 'gallery'} 
           onClick={() => handleTabChange('gallery')}
+          darkMode={darkMode}
         >
-          🖼️ 갤러리
+          🐱 우리집 고양이 알려주기
         </Tab>
       </TabContainer>
 
       <MainContent>
         <TabContent active={activeTab === 'upload'}>
           {currentStep === 'upload' && (
-            <VideoUploader onVideoUpload={handleVideoUpload} />
+            <VideoUploader onVideoUpload={handleVideoUpload} darkMode={darkMode} />
           )}
 
           {currentStep === 'processing' && videoFile && (
@@ -310,6 +334,7 @@ function App() {
               videoFile={videoFile} 
               onCatsCropped={handleCatsCropped}
               onBack={handleBackToUpload}
+              darkMode={darkMode}
             />
           )}
         </TabContent>
@@ -324,11 +349,12 @@ function App() {
             onRefresh={loadSavedCats}
             savedGroups={savedGroups}
             onShowGlobalMessage={showGlobalMessage}
+            darkMode={darkMode}
           />
         </TabContent>
       </MainContent>
 
-      <FloatingMenu />
+      <FloatingMenu darkMode={darkMode} onDarkModeToggle={handleDarkModeToggle} />
     </AppContainer>
   );
 }

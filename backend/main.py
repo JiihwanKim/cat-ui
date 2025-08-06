@@ -351,7 +351,7 @@ image_cropper = ImageCropper()
 groups_file = BASE_DIR / "cat_groups.json"
 
 # 그룹 정보 관리 함수들
-def load_cat_groups() -> Dict[str, str]:
+def load_cat_groups() -> Dict[str, Any]:
     """저장된 고양이 그룹 정보를 로드"""
     try:
         print(f"=== 그룹 정보 로드 함수 호출됨 ===")
@@ -363,21 +363,39 @@ def load_cat_groups() -> Dict[str, str]:
             with open(groups_file, 'r', encoding='utf-8') as f:
                 content = f.read()
                 print(f"파일 내용: {content}")
-                groups = json.loads(content)
-                print(f"로드된 그룹: {groups}")
-                return groups
+                data = json.loads(content)
+                print(f"로드된 데이터: {data}")
+                
+                # 기존 형식과 새로운 형식 모두 지원
+                if isinstance(data, dict):
+                    # 새로운 형식: {"groups": {...}, "profiles": {...}}
+                    if "groups" in data and "profiles" in data:
+                        return data
+                    # 기존 형식: {"cat_id": "group_name"}
+                    else:
+                        # 기존 형식을 새로운 형식으로 마이그레이션
+                        print("기존 형식을 새로운 형식으로 마이그레이션합니다.")
+                        migrated_data = {
+                            "groups": data,
+                            "profiles": {}
+                        }
+                        # 마이그레이션된 데이터를 저장
+                        save_cat_groups(migrated_data)
+                        return migrated_data
+                else:
+                    return {"groups": {}, "profiles": {}}
         else:
             print("파일이 존재하지 않음")
-            return {}
+            return {"groups": {}, "profiles": {}}
     except Exception as e:
         print(f"그룹 정보 로드 실패: {e}")
-        return {}
+        return {"groups": {}, "profiles": {}}
 
-def save_cat_groups(groups: Dict[str, str]):
+def save_cat_groups(groups_data: Dict[str, Any]):
     """고양이 그룹 정보를 저장"""
     try:
         print(f"=== 그룹 정보 저장 함수 호출됨 ===")
-        print(f"저장할 데이터: {groups}")
+        print(f"저장할 데이터: {groups_data}")
         print(f"파일 경로: {groups_file}")
         print(f"파일 경로 타입: {type(groups_file)}")
         print(f"파일 경로 존재 여부: {groups_file.exists()}")
@@ -386,8 +404,14 @@ def save_cat_groups(groups: Dict[str, str]):
         groups_file.parent.mkdir(exist_ok=True)
         print(f"디렉토리 생성 완료: {groups_file.parent}")
         
+        # 새로운 형식으로 저장
+        save_data = {
+            "groups": groups_data.get("groups", {}),
+            "profiles": groups_data.get("profiles", {})
+        }
+        
         with open(groups_file, 'w', encoding='utf-8') as f:
-            json.dump(groups, f, ensure_ascii=False, indent=2)
+            json.dump(save_data, f, ensure_ascii=False, indent=2)
         
         print(f"파일 저장 완료: {groups_file}")
         print(f"파일 크기: {groups_file.stat().st_size} bytes")
@@ -417,12 +441,15 @@ async def upload_video(videos: List[UploadFile] = File(...)):
     """여러 영상 업로드 및 처리"""
     try:
         all_results = []
+        total_videos = len(videos)
         
-        for video in videos:
+        for video_index, video in enumerate(videos):
             # 파일 확장자 검사
             if not video.filename.lower().endswith(('.mp4', '.avi', '.mov', '.mkv', '.webm')):
                 print(f"지원되지 않는 파일 형식 건너뛰기: {video.filename}")
                 continue
+            
+            print(f"=== 영상 {video_index + 1}/{total_videos} 처리 시작: {video.filename} ===")
             
             # 원본 파일명을 그대로 사용하고 기존 파일이 있으면 덮어쓰기
             filename = video.filename
@@ -432,6 +459,7 @@ async def upload_video(videos: List[UploadFile] = File(...)):
             if filepath.exists():
                 print(f"기존 파일 덮어쓰기: {filename}")
             
+            print(f"파일 업로드 중: {filename}")
             with open(filepath, "wb") as buffer:
                 shutil.copyfileobj(video.file, buffer)
             
@@ -444,13 +472,21 @@ async def upload_video(videos: List[UploadFile] = File(...)):
             }
             
             print(f"영상 업로드 완료: {video_info}")
+            print(f"프레임 추출 시작: {filename}")
             
             # YOLO11 모델로 고양이 감지 및 크롭 이미지 생성
             total_frames, fps = await yolo_processor.extract_frames(str(filepath))
-            detected_cats = await yolo_processor.detect_cats(str(filepath), total_frames, fps, filename)
-            cropped_cats = await image_cropper.create_cat_crops(detected_cats)
+            print(f"프레임 추출 완료: {total_frames} 프레임, {fps} FPS")
             
-            print(f"감지된 고양이 원본 데이터: {detected_cats}")
+            print(f"고양이 감지 시작: {filename}")
+            detected_cats = await yolo_processor.detect_cats(str(filepath), total_frames, fps, filename)
+            print(f"고양이 감지 완료: {len(detected_cats)}마리 감지")
+            
+            print(f"이미지 크롭 시작: {filename}")
+            cropped_cats = await image_cropper.create_cat_crops(detected_cats)
+            print(f"이미지 크롭 완료: {len(cropped_cats)}개 이미지 생성")
+            
+            print(f"=== 영상 {video_index + 1}/{total_videos} 처리 완료: {video.filename} ===")
             
             # 안전한 응답 데이터 생성 (바이트 데이터 제거)
             safe_detected_cats = []
@@ -555,8 +591,11 @@ async def get_cropped_cats():
         print(f"발견된 이미지 파일 수: {len(image_files)}")
         
         # 저장된 그룹 정보 로드
-        groups = load_cat_groups()
+        groups_data = load_cat_groups()
+        groups = groups_data.get("groups", {})
+        profiles = groups_data.get("profiles", {})
         print(f"로드된 그룹 정보: {groups}")
+        print(f"로드된 프로필 정보: {profiles}")
         
         cropped_cats = []
         for file_path in image_files:
@@ -640,6 +679,7 @@ async def get_cropped_cats():
             "success": True,
             "croppedCats": cropped_cats,
             "groups": groups,
+            "profiles": profiles,
             "message": f"총 {len(cropped_cats)}마리의 고양이 데이터를 로드했습니다."
         }
         
@@ -915,11 +955,15 @@ async def get_cat_groups():
     """저장된 고양이 그룹 정보를 반환"""
     print("=== 그룹 정보 로드 API 호출됨 ===")
     try:
-        groups = load_cat_groups()
+        groups_data = load_cat_groups()
+        groups = groups_data.get("groups", {})
+        profiles = groups_data.get("profiles", {})
         print(f"로드된 그룹: {groups}")
+        print(f"로드된 프로필: {profiles}")
         return {
             "success": True,
             "groups": groups,
+            "profiles": profiles,
             "message": "그룹 정보를 성공적으로 로드했습니다."
         }
     except Exception as e:
@@ -931,7 +975,7 @@ async def get_cat_groups():
         }
 
 @app.post("/api/cat-groups")
-async def save_cat_groups_api(groups_data: Dict[str, str]):
+async def save_cat_groups_api(groups_data: Dict[str, Any]):
     """고양이 그룹 정보를 저장"""
     print("=== 그룹 정보 저장 API 호출됨 ===")
     print(f"요청 데이터: {groups_data}")
@@ -966,7 +1010,9 @@ async def get_statistics():
         cropped_count = len(cropped_images)
         
         # 라벨링된 이미지 수 및 고양이별 이미지 수
-        groups = load_cat_groups()
+        groups_data = load_cat_groups()
+        groups = groups_data.get("groups", {})
+        profiles = groups_data.get("profiles", {})
         labeled_count = len(groups)
         
         # 고양이별 이미지 수 계산
@@ -993,9 +1039,11 @@ async def get_statistics():
                 "video_count": video_count,
                 "cropped_count": cropped_count,
                 "labeled_count": labeled_count,
-                "label_counts": cat_image_counts
+                "label_counts": cat_image_counts,
+                "profile_count": len(profiles)
             },
-            "video_list": video_list
+            "video_list": video_list,
+            "profiles": profiles
         }
     except Exception as e:
         print(f"통계 정보 조회 실패: {e}")
@@ -1005,7 +1053,7 @@ async def get_statistics():
         }
 
 if __name__ == "__main__":
-    print("🐱 고양이 영상 처리 백엔드 서버가 포트 5000에서 실행 중입니다.")
+    print("�� 고양이 영상 처리 백엔드 서버가 포트 5000에서 실행 중입니다.")
     print("📡 API 엔드포인트:")
     print("   - POST /api/video/upload (영상 업로드 및 처리)")
     print("   - POST /api/cats/upload (고양이 데이터 전송)")
