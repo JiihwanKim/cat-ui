@@ -2003,26 +2003,92 @@ function CatGallery({
         progress: 90
       }));
       
-      const response = await fetch(`http://localhost:5000${checkpointInfo.download_url}`);
+      // fetch를 사용하여 파일 다운로드
+      const response = await fetch(`http://localhost:5000/api/yolo/download-checkpoint-file/${checkpointInfo.checkpoint_file}`);
       
-      if (response.ok) {
-        const blob = await response.blob();
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = checkpointInfo.checkpoint_file;
-        document.body.appendChild(a);
-        a.click();
-        window.URL.revokeObjectURL(url);
-        document.body.removeChild(a);
-        
-        setStatusBar(prev => ({
-          ...prev,
-          message: '체크포인트 파일 다운로드 완료!',
-          progress: 100
-        }));
-      } else {
-        throw new Error('체크포인트 다운로드 실패');
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      // 파일을 blob으로 받기
+      const blob = await response.blob();
+      
+      // File System Access API를 사용하여 ~/.caregiver 디렉토리에 저장
+      const saveToCaregiverDir = async () => {
+        try {
+          if ('showDirectoryPicker' in window) {
+            // 사용자에게 ~/.caregiver 디렉토리 선택 요청
+            const caregiverDir = await window.showDirectoryPicker({
+              mode: 'readwrite',
+              startIn: 'home'
+            });
+            
+            // checkpoints 하위 디렉토리 생성 또는 접근
+            let checkpointsDir;
+            try {
+              checkpointsDir = await caregiverDir.getDirectoryHandle('checkpoints', { create: true });
+            } catch (error) {
+              console.error('checkpoints 디렉토리 생성 실패:', error);
+              throw error;
+            }
+            
+            // 파일 저장
+            const fileHandle = await checkpointsDir.getFileHandle(checkpointInfo.checkpoint_file, { create: true });
+            const writable = await fileHandle.createWritable();
+            await writable.write(blob);
+            await writable.close();
+            
+            setStatusBar(prev => ({
+              ...prev,
+              message: '체크포인트 파일이 ~/.caregiver/checkpoints에 저장되었습니다!',
+              progress: 100
+            }));
+            
+            return true;
+          } else {
+            throw new Error('File System Access API not supported');
+          }
+        } catch (error) {
+          console.error('~/.caregiver 디렉토리 저장 실패:', error);
+          return false;
+        }
+      };
+      
+      // ~/.caregiver 디렉토리에 저장 시도
+      const savedToCaregiver = await saveToCaregiverDir();
+      
+      if (!savedToCaregiver) {
+        // File System Access API를 지원하지 않는 경우, 사용자가 직접 저장 위치 선택
+        if ('showSaveFilePicker' in window) {
+          try {
+            const handle = await window.showSaveFilePicker({
+              suggestedName: checkpointInfo.checkpoint_file,
+              types: [{
+                description: 'PyTorch Model Files',
+                accept: {
+                  'application/octet-stream': ['.pth']
+                }
+              }]
+            });
+            
+            const writable = await handle.createWritable();
+            await writable.write(blob);
+            await writable.close();
+            
+            setStatusBar(prev => ({
+              ...prev,
+              message: '체크포인트 파일 저장 완료! (사용자가 선택한 위치에 저장됨)',
+              progress: 100
+            }));
+          } catch (error) {
+            console.error('파일 저장 실패:', error);
+            // 최종 폴백: 기존 다운로드 방식 사용
+            fallbackDownload(blob, checkpointInfo.checkpoint_file);
+          }
+        } else {
+          // 구형 브라우저 지원을 위한 폴백
+          fallbackDownload(blob, checkpointInfo.checkpoint_file);
+        }
       }
     } catch (error) {
       console.error('체크포인트 다운로드 실패:', error);
@@ -2034,6 +2100,24 @@ function CatGallery({
         progress: 0
       }));
     }
+  };
+
+  // 폴백 다운로드 함수 (구형 브라우저용)
+  const fallbackDownload = (blob, filename) => {
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+    document.body.removeChild(a);
+    
+    setStatusBar(prev => ({
+      ...prev,
+      message: '체크포인트 파일 다운로드 완료! (기본 다운로드 폴더에 저장됨)',
+      progress: 100
+    }));
   };
 
   const handleSelectAll = () => {

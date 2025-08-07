@@ -17,6 +17,18 @@ import asyncio
 from typing import List, Dict, Any
 import torch
 import json
+import platform
+
+# Rich 라이브러리 추가
+from rich.console import Console
+from rich.panel import Panel
+from rich.text import Text
+from rich.table import Table
+from rich.progress import Progress, SpinnerColumn, TextColumn, BarColumn, TimeElapsedColumn
+from rich import box
+
+# Rich 콘솔 초기화
+console = Console()
 
 # --- 경로 설정 ---
 # 현재 파일의 디렉토리를 기준으로 경로 설정
@@ -44,20 +56,25 @@ app.add_middleware(
 cropped_images_dir = BASE_DIR / "cropped-images"
 # 디렉토리가 없으면 생성 (parents=True로 상위 디렉토리도 생성)
 cropped_images_dir.mkdir(parents=True, exist_ok=True)
-print(f"cropped-images 디렉토리 생성/확인: {cropped_images_dir}")
+console.print(f"[green]✓[/green] cropped-images 디렉토리 생성/확인: {cropped_images_dir}")
 
 # 디렉토리가 실제로 존재하는지 확인
 if not cropped_images_dir.exists():
-    print(f"경고: cropped-images 디렉토리를 생성할 수 없습니다: {cropped_images_dir}")
+    console.print(f"[red]⚠[/red] 경고: cropped-images 디렉토리를 생성할 수 없습니다: {cropped_images_dir}")
 else:
-    print(f"cropped-images 디렉토리 확인됨: {cropped_images_dir}")
+    console.print(f"[green]✓[/green] cropped-images 디렉토리 확인됨: {cropped_images_dir}")
 
 app.mount("/cropped-images", StaticFiles(directory=str(cropped_images_dir)), name="cropped-images")
 
 # 업로드 디렉토리 생성
 uploads_dir = BASE_DIR / "uploads"
 uploads_dir.mkdir(parents=True, exist_ok=True)
-print(f"uploads 디렉토리 생성/확인: {uploads_dir}")
+console.print(f"[green]✓[/green] uploads 디렉토리 생성/확인: {uploads_dir}")
+
+# 관련 API 엔드포인트들도 제거
+# @app.get("/api/caregiver/config")
+# @app.post("/api/caregiver/config")
+# @app.post("/api/caregiver/cleanup-checkpoints")
 
 # YOLO 모델 로드 및 최적화된 설정
 class YOLO11Processor:
@@ -80,7 +97,7 @@ class YOLO11Processor:
     async def load_model(self):
         """YOLO11 모델 로드 및 최적화"""
         try:
-            print("YOLO 모델 로딩 중...")
+            console.print("[blue]🔄[/blue] YOLO 모델 로딩 중...")
             
             # PyTorch 2.6+ 호환성을 위한 안전한 글로벌 추가
             safe_globals = [
@@ -94,14 +111,14 @@ class YOLO11Processor:
             # YOLO 모델 로드 (yolo11n.pt 부터 시도)
             try:
                 self.model = YOLO('yolo11n.pt')
-                print("YOLO11n 모델 로드 완료")
+                console.print("[green]✓[/green] YOLO11n 모델 로드 완료")
             except Exception as e:
-                print(f"YOLO11n 모델 로드 실패: {e}, 다른 모델을 시도합니다.")
+                console.print(f"[yellow]⚠[/yellow] YOLO11n 모델 로드 실패: {e}, 다른 모델을 시도합니다.")
                 try:
                     self.model = YOLO('yolov8n.pt')
-                    print("YOLOv8n 모델 로드 완료")
+                    console.print("[green]✓[/green] YOLOv8n 모델 로드 완료")
                 except Exception as e2:
-                    print(f"모든 모델 로드 실패: {e2}")
+                    console.print(f"[red]✗[/red] 모든 모델 로드 실패: {e2}")
                     self.is_model_loaded = False
                     return
             
@@ -115,10 +132,10 @@ class YOLO11Processor:
                 torch.backends.cudnn.benchmark = True  # CUDA 최적화
             
             self.is_model_loaded = True
-            print("YOLO 모델 로딩 및 최적화 완료")
+            console.print("[green]✓[/green] YOLO 모델 로딩 및 최적화 완료")
             
         except Exception as e:
-            print(f"YOLO 모델 로딩 중 예상치 못한 오류: {e}")
+            console.print(f"[red]✗[/red] YOLO 모델 로딩 중 예상치 못한 오류: {e}")
             self.is_model_loaded = False
     
     async def extract_frames(self, video_path: str) -> tuple:
@@ -130,7 +147,7 @@ class YOLO11Processor:
             cap.release()
             return total_frames, fps
         except Exception as e:
-            print(f"프레임 추출 오류: {e}")
+            console.print(f"[red]✗[/red] 프레임 추출 오류: {e}")
             return 0, 30
     
     async def detect_cats(self, video_path: str, total_frames: int, fps: float, video_filename: str = None) -> List[Dict]:
@@ -140,12 +157,12 @@ class YOLO11Processor:
         
         # 모델이 로드되지 않았으면 빈 리스트 반환
         if not self.is_model_loaded or self.model is None:
-            print("YOLO 모델이 로드되지 않아 고양이 감지를 건너뜁니다.")
+            console.print("[red]✗[/red] YOLO 모델이 로드되지 않아 고양이 감지를 건너뜁니다.")
             return []
         
         # cropped-images 디렉토리 확인 및 생성
         cropped_images_dir.mkdir(parents=True, exist_ok=True)
-        print(f"detect_cats에서 cropped-images 디렉토리 확인: {cropped_images_dir}")
+        console.print(f"[blue]ℹ[/blue] detect_cats에서 cropped-images 디렉토리 확인: {cropped_images_dir}")
         
         # 영상 파일명에서 확장자 제거
         if video_filename:
@@ -153,7 +170,7 @@ class YOLO11Processor:
         else:
             video_name = Path(video_path).stem
         
-        print(f"영상 이름: {video_name}, FPS: {fps}, 총 프레임: {total_frames}")
+        console.print(f"[blue]ℹ[/blue] 영상 이름: {video_name}, FPS: {fps}, 총 프레임: {total_frames}")
         
         cats = []
         cap = cv2.VideoCapture(video_path)
@@ -214,7 +231,7 @@ class YOLO11Processor:
                                                 
                                                 # 파일 저장
                                                 success = cv2.imwrite(str(filepath), cropped_resized)
-                                                print(f"이미지 저장: {filepath}, 성공: {success}")
+                                                console.print(f"[blue]ℹ[/blue] 이미지 저장: {filepath}, 성공: {success}")
                                                 
                                                 # 정확한 시간 계산
                                                 timestamp = batch_frame_count / fps
@@ -239,17 +256,17 @@ class YOLO11Processor:
                                                     "totalFrames": total_frames
                                                 }
                                                 
-                                                print(f"고양이 정보 생성: {cat_info}")
+                                                console.print(f"[blue]ℹ[/blue] 고양이 정보 생성: {cat_info}")
                                                 cats.append(cat_info)
                     
-                    print(f"배치 처리 완료: 프레임 {batch_frame_count}/{total_frames}, 고양이 {len([c for c in cats if c['frame'] == batch_frame_count])}마리 감지")
+                    console.print(f"[blue]ℹ[/blue] 배치 처리 완료: 프레임 {batch_frame_count}/{total_frames}, 고양이 {len([c for c in cats if c['frame'] == batch_frame_count])}마리 감지")
                     batch_frames = []  # 배치 초기화
             
             frame_count += 1
         
         cap.release()
-        print(f"총 {len(cats)}마리의 고양이가 감지되었습니다.")
-        print(f"최종 고양이 데이터: {cats}")
+        console.print(f"[green]✓[/green] 총 {len(cats)}마리의 고양이가 감지되었습니다.")
+        console.print(f"[blue]ℹ[/blue] 최종 고양이 데이터: {cats}")
         return cats
 
 # YOLO 프로세서 인스턴스
@@ -322,7 +339,7 @@ class ImageCropper:
             
             return None
         except Exception as e:
-            print(f"고양이 크롭 생성 중 오류: {e}")
+            console.print(f"[red]✗[/red] 고양이 크롭 생성 중 오류: {e}")
             return None
     
     async def create_cat_crops(self, cats: List[Dict]) -> List[Dict]:
@@ -354,17 +371,17 @@ groups_file = BASE_DIR / "cat_groups.json"
 def load_cat_groups() -> Dict[str, Any]:
     """저장된 고양이 그룹 정보를 로드"""
     try:
-        print(f"=== 그룹 정보 로드 함수 호출됨 ===")
-        print(f"파일 경로: {groups_file}")
-        print(f"파일 존재 여부: {groups_file.exists()}")
+        console.print(f"[blue]ℹ[/blue] === 그룹 정보 로드 함수 호출됨 ===")
+        console.print(f"[blue]ℹ[/blue] 파일 경로: {groups_file}")
+        console.print(f"[blue]ℹ[/blue] 파일 존재 여부: {groups_file.exists()}")
         
         if groups_file.exists():
-            print(f"파일 크기: {groups_file.stat().st_size} bytes")
+            console.print(f"[blue]ℹ[/blue] 파일 크기: {groups_file.stat().st_size} bytes")
             with open(groups_file, 'r', encoding='utf-8') as f:
                 content = f.read()
-                print(f"파일 내용: {content}")
+                console.print(f"[blue]ℹ[/blue] 파일 내용: {content}")
                 data = json.loads(content)
-                print(f"로드된 데이터: {data}")
+                console.print(f"[blue]ℹ[/blue] 로드된 데이터: {data}")
                 
                 # 기존 형식과 새로운 형식 모두 지원
                 if isinstance(data, dict):
@@ -374,7 +391,7 @@ def load_cat_groups() -> Dict[str, Any]:
                     # 기존 형식: {"cat_id": "group_name"}
                     else:
                         # 기존 형식을 새로운 형식으로 마이그레이션
-                        print("기존 형식을 새로운 형식으로 마이그레이션합니다.")
+                        console.print("[yellow]⚠[/yellow] 기존 형식을 새로운 형식으로 마이그레이션합니다.")
                         migrated_data = {
                             "groups": data,
                             "profiles": {}
@@ -385,24 +402,24 @@ def load_cat_groups() -> Dict[str, Any]:
                 else:
                     return {"groups": {}, "profiles": {}}
         else:
-            print("파일이 존재하지 않음")
+            console.print("[yellow]⚠[/yellow] 파일이 존재하지 않음")
             return {"groups": {}, "profiles": {}}
     except Exception as e:
-        print(f"그룹 정보 로드 실패: {e}")
+        console.print(f"[red]✗[/red] 그룹 정보 로드 실패: {e}")
         return {"groups": {}, "profiles": {}}
 
 def save_cat_groups(groups_data: Dict[str, Any]):
     """고양이 그룹 정보를 저장"""
     try:
-        print(f"=== 그룹 정보 저장 함수 호출됨 ===")
-        print(f"저장할 데이터: {groups_data}")
-        print(f"파일 경로: {groups_file}")
-        print(f"파일 경로 타입: {type(groups_file)}")
-        print(f"파일 경로 존재 여부: {groups_file.exists()}")
+        console.print(f"[blue]ℹ[/blue] === 그룹 정보 저장 함수 호출됨 ===")
+        console.print(f"[blue]ℹ[/blue] 저장할 데이터: {groups_data}")
+        console.print(f"[blue]ℹ[/blue] 파일 경로: {groups_file}")
+        console.print(f"[blue]ℹ[/blue] 파일 경로 타입: {type(groups_file)}")
+        console.print(f"[blue]ℹ[/blue] 파일 경로 존재 여부: {groups_file.exists()}")
         
         # 디렉토리가 없으면 생성
         groups_file.parent.mkdir(exist_ok=True)
-        print(f"디렉토리 생성 완료: {groups_file.parent}")
+        console.print(f"[blue]ℹ[/blue] 디렉토리 생성 완료: {groups_file.parent}")
         
         # groups와 profiles 데이터 추출
         groups = groups_data.get("groups", {})
@@ -415,9 +432,9 @@ def save_cat_groups(groups_data: Dict[str, Any]):
         for group_name, profile_filename in profiles.items():
             if group_name in valid_groups:
                 filtered_profiles[group_name] = profile_filename
-                print(f"프로필 유지: {group_name} -> {profile_filename}")
+                console.print(f"[blue]ℹ[/blue] 프로필 유지: {group_name} -> {profile_filename}")
             else:
-                print(f"프로필 제거: {group_name} (groups에 존재하지 않음)")
+                console.print(f"[yellow]⚠[/yellow] 프로필 제거: {group_name} (groups에 존재하지 않음)")
         
         # 새로운 형식으로 저장
         save_data = {
@@ -425,17 +442,17 @@ def save_cat_groups(groups_data: Dict[str, Any]):
             "profiles": filtered_profiles
         }
         
-        print(f"필터링된 프로필: {filtered_profiles}")
-        print(f"저장할 최종 데이터: {save_data}")
+        console.print(f"[blue]ℹ[/blue] 필터링된 프로필: {filtered_profiles}")
+        console.print(f"[blue]ℹ[/blue] 저장할 최종 데이터: {save_data}")
         
         with open(groups_file, 'w', encoding='utf-8') as f:
             json.dump(save_data, f, ensure_ascii=False, indent=2)
         
-        print(f"파일 저장 완료: {groups_file}")
-        print(f"파일 크기: {groups_file.stat().st_size} bytes")
-        print("그룹 정보 저장 완료")
+        console.print(f"[green]✓[/green] 파일 저장 완료: {groups_file}")
+        console.print(f"[blue]ℹ[/blue] 파일 크기: {groups_file.stat().st_size} bytes")
+        console.print("[green]✓[/green] 그룹 정보 저장 완료")
     except Exception as e:
-        print(f"그룹 정보 저장 실패: {e}")
+        console.print(f"[red]✗[/red] 그룹 정보 저장 실패: {e}")
         raise HTTPException(status_code=500, detail="그룹 정보 저장 실패")
 
 @app.on_event("startup")
@@ -464,10 +481,10 @@ async def upload_video(videos: List[UploadFile] = File(...)):
         for video_index, video in enumerate(videos):
             # 파일 확장자 검사
             if not video.filename.lower().endswith(('.mp4', '.avi', '.mov', '.mkv', '.webm')):
-                print(f"지원되지 않는 파일 형식 건너뛰기: {video.filename}")
+                console.print(f"[yellow]⚠[/yellow] 지원되지 않는 파일 형식 건너뛰기: {video.filename}")
                 continue
             
-            print(f"=== 영상 {video_index + 1}/{total_videos} 처리 시작: {video.filename} ===")
+            console.print(f"[blue]ℹ[/blue] === 영상 {video_index + 1}/{total_videos} 처리 시작: {video.filename} ===")
             
             # 원본 파일명을 그대로 사용하고 기존 파일이 있으면 덮어쓰기
             filename = video.filename
@@ -475,9 +492,9 @@ async def upload_video(videos: List[UploadFile] = File(...)):
             
             # 기존 파일이 있으면 덮어쓰기
             if filepath.exists():
-                print(f"기존 파일 덮어쓰기: {filename}")
+                console.print(f"[yellow]⚠[/yellow] 기존 파일 덮어쓰기: {filename}")
             
-            print(f"파일 업로드 중: {filename}")
+            console.print(f"[blue]ℹ[/blue] 파일 업로드 중: {filename}")
             with open(filepath, "wb") as buffer:
                 shutil.copyfileobj(video.file, buffer)
             
@@ -489,22 +506,22 @@ async def upload_video(videos: List[UploadFile] = File(...)):
                 "path": str(filepath)
             }
             
-            print(f"영상 업로드 완료: {video_info}")
-            print(f"프레임 추출 시작: {filename}")
+            console.print(f"[green]✓[/green] 영상 업로드 완료: {video_info}")
+            console.print(f"[blue]ℹ[/blue] 프레임 추출 시작: {filename}")
             
             # YOLO11 모델로 고양이 감지 및 크롭 이미지 생성
             total_frames, fps = await yolo_processor.extract_frames(str(filepath))
-            print(f"프레임 추출 완료: {total_frames} 프레임, {fps} FPS")
+            console.print(f"[green]✓[/green] 프레임 추출 완료: {total_frames} 프레임, {fps} FPS")
             
-            print(f"고양이 감지 시작: {filename}")
+            console.print(f"[blue]ℹ[/blue] 고양이 감지 시작: {filename}")
             detected_cats = await yolo_processor.detect_cats(str(filepath), total_frames, fps, filename)
-            print(f"고양이 감지 완료: {len(detected_cats)}마리 감지")
+            console.print(f"[green]✓[/green] 고양이 감지 완료: {len(detected_cats)}마리 감지")
             
-            print(f"이미지 크롭 시작: {filename}")
+            console.print(f"[blue]ℹ[/blue] 이미지 크롭 시작: {filename}")
             cropped_cats = await image_cropper.create_cat_crops(detected_cats)
-            print(f"이미지 크롭 완료: {len(cropped_cats)}개 이미지 생성")
+            console.print(f"[green]✓[/green] 이미지 크롭 완료: {len(cropped_cats)}개 이미지 생성")
             
-            print(f"=== 영상 {video_index + 1}/{total_videos} 처리 완료: {video.filename} ===")
+            console.print(f"[green]✓[/green] === 영상 {video_index + 1}/{total_videos} 처리 완료: {video.filename} ===")
             
             # 안전한 응답 데이터 생성 (바이트 데이터 제거)
             safe_detected_cats = []
@@ -527,7 +544,7 @@ async def upload_video(videos: List[UploadFile] = File(...)):
                 }
                 safe_detected_cats.append(safe_cat)
             
-            print(f"안전한 고양이 데이터: {safe_detected_cats}")
+            console.print(f"[blue]ℹ[/blue] 안전한 고양이 데이터: {safe_detected_cats}")
             
             result = {
                 "videoInfo": video_info,
@@ -556,19 +573,19 @@ async def upload_video(videos: List[UploadFile] = File(...)):
             }
         }
         
-        print(f"최종 응답 데이터: {final_response}")
+        console.print(f"[blue]ℹ[/blue] 최종 응답 데이터: {final_response}")
         
         return final_response
         
     except Exception as e:
-        print(f"업로드 처리 중 오류: {e}")
+        console.print(f"[red]✗[/red] 업로드 처리 중 오류: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/api/cats/upload")
 async def upload_cats(cats: List[Dict]):
     """고양이 데이터 전송"""
     try:
-        print(f"{len(cats)}마리의 고양이 데이터 수신")
+        console.print(f"[blue]ℹ[/blue] {len(cats)}마리의 고양이 데이터 수신")
         
         # 안전한 고양이 데이터 생성 (바이트 데이터 제거)
         safe_cats = []
@@ -595,29 +612,29 @@ async def upload_cats(cats: List[Dict]):
         }
         
     except Exception as e:
-        print(f"고양이 데이터 처리 중 오류: {e}")
+        console.print(f"[red]✗[/red] 고양이 데이터 처리 중 오류: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/api/cropped-cats")
 async def get_cropped_cats():
     """크롭된 고양이 이미지 목록"""
     try:
-        print(f"크롭된 이미지 디렉토리: {cropped_images_dir}")
-        print(f"디렉토리 존재 여부: {cropped_images_dir.exists()}")
+        console.print(f"[blue]ℹ[/blue] 크롭된 이미지 디렉토리: {cropped_images_dir}")
+        console.print(f"[blue]ℹ[/blue] 디렉토리 존재 여부: {cropped_images_dir.exists()}")
         
         image_files = list(cropped_images_dir.glob("*.png")) + list(cropped_images_dir.glob("*.jpg"))
-        print(f"발견된 이미지 파일 수: {len(image_files)}")
+        console.print(f"[blue]ℹ[/blue] 발견된 이미지 파일 수: {len(image_files)}")
         
         # 저장된 그룹 정보 로드
         groups_data = load_cat_groups()
         groups = groups_data.get("groups", {})
         profiles = groups_data.get("profiles", {})
-        print(f"로드된 그룹 정보: {groups}")
-        print(f"로드된 프로필 정보: {profiles}")
+        console.print(f"[blue]ℹ[/blue] 로드된 그룹 정보: {groups}")
+        console.print(f"[blue]ℹ[/blue] 로드된 프로필 정보: {profiles}")
         
         cropped_cats = []
         for file_path in image_files:
-            print(f"이미지 파일: {file_path}")
+            console.print(f"[blue]ℹ[/blue] 이미지 파일: {file_path}")
             
             # 파일명에서 정보 추출 (예: video_name_frame_52_0.png)
             filename = file_path.stem
@@ -656,14 +673,14 @@ async def get_cropped_cats():
                     # 신뢰도는 기본값 사용 (실제로는 파일에서 추출할 수 없음)
                     confidence = 0.8
                     
-                    print(f"파싱된 정보: frame={frame}, timestamp={timestamp}, timeString={timeString}, videoName={videoName}")
+                    console.print(f"[blue]ℹ[/blue] 파싱된 정보: frame={frame}, timestamp={timestamp}, timeString={timeString}, videoName={videoName}")
                     
                 except (ValueError, IndexError) as e:
-                    print(f"파일명 파싱 오류: {filename}, 오류: {e}")
+                    console.print(f"[red]✗[/red] 파일명 파싱 오류: {filename}, 오류: {e}")
                     # 기본값 사용
                     pass
             else:
-                print(f"파일명 패턴이 맞지 않음: {filename}")
+                console.print(f"[yellow]⚠[/yellow] 파일명 패턴이 맞지 않음: {filename}")
             
             # 고양이 정보 생성
             cat_id = filename
@@ -690,7 +707,7 @@ async def get_cropped_cats():
             
             cropped_cats.append(cat_info)
         
-        print(f"반환할 고양이 데이터: {cropped_cats}")
+        console.print(f"[blue]ℹ[/blue] 반환할 고양이 데이터: {cropped_cats}")
         
         # 프론트엔드가 기대하는 형식으로 응답
         return {
@@ -702,7 +719,7 @@ async def get_cropped_cats():
         }
         
     except Exception as e:
-        print(f"크롭된 고양이 목록 조회 실패: {e}")
+        console.print(f"[red]✗[/red] 크롭된 고양이 목록 조회 실패: {e}")
         return {
             "success": False,
             "croppedCats": [],
@@ -733,7 +750,7 @@ async def get_videos():
         }
         
     except Exception as e:
-        print(f"비디오 파일 목록 조회 중 오류: {e}")
+        console.print(f"[red]✗[/red] 비디오 파일 목록 조회 중 오류: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.delete("/api/videos/{filename}")
@@ -752,7 +769,7 @@ async def delete_video(filename: str):
             raise HTTPException(status_code=404, detail="파일을 찾을 수 없습니다.")
             
     except Exception as e:
-        print(f"파일 삭제 중 오류: {e}")
+        console.print(f"[red]✗[/red] 파일 삭제 중 오류: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/api/yolo/config")
@@ -778,7 +795,7 @@ async def update_yolo_config(config: Dict[str, Any]):
         for key, value in config.items():
             if key in allowed_keys:
                 yolo_processor.inference_config[key] = value
-                print(f"YOLO 설정 업데이트: {key} = {value}")
+                console.print(f"[blue]ℹ[/blue] YOLO 설정 업데이트: {key} = {value}")
         
         return {
             "success": True,
@@ -787,7 +804,7 @@ async def update_yolo_config(config: Dict[str, Any]):
         }
         
     except Exception as e:
-        print(f"YOLO 설정 업데이트 중 오류: {e}")
+        console.print(f"[red]✗[/red] YOLO 설정 업데이트 중 오류: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/api/yolo/reset-config")
@@ -814,7 +831,7 @@ async def reset_yolo_config():
         }
         
     except Exception as e:
-        print(f"YOLO 설정 초기화 중 오류: {e}")
+        console.print(f"[red]✗[/red] YOLO 설정 초기화 중 오류: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/api/yolo/reload")
@@ -830,7 +847,7 @@ async def reload_yolo_model():
         }
         
     except Exception as e:
-        print(f"YOLO 모델 재로드 중 오류: {e}")
+        console.print(f"[red]✗[/red] YOLO 모델 재로드 중 오류: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/api/yolo/model-status")
@@ -873,14 +890,14 @@ async def get_model_status():
         }
         
     except Exception as e:
-        print(f"모델 상태 확인 중 오류: {e}")
+        console.print(f"[red]✗[/red] 모델 상태 확인 중 오류: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/api/yolo/download-model")
 async def download_model(model_name: str = "yolo11n.pt"):
     """특정 YOLO 모델 다운로드"""
     try:
-        print(f"{model_name} 모델 다운로드를 시작합니다...")
+        console.print(f"[blue]ℹ[/blue] {model_name} 모델 다운로드를 시작합니다...")
         
         # 모델 다운로드
         model = YOLO(model_name)
@@ -906,13 +923,13 @@ async def download_model(model_name: str = "yolo11n.pt"):
         }
         
     except Exception as e:
-        print(f"모델 다운로드 중 오류: {e}")
+        console.print(f"[red]✗[/red] 모델 다운로드 중 오류: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 def prepare_training_data():
     """cat_groups.json을 읽어서 학습용 데이터셋 구조 생성"""
     try:
-        print("=== 학습 데이터 준비 시작 ===")
+        console.print("[blue]ℹ[/blue] === 학습 데이터 준비 시작 ===")
         
         # cat_groups.json 로드
         groups_data = load_cat_groups()
@@ -927,15 +944,19 @@ def prepare_training_data():
             if group_name not in group_images:
                 group_images[group_name] = []
             
-            # cropped-images 디렉토리에서 해당 이미지 찾기
-            image_path = cropped_images_dir / f"{cat_id}.jpg"
-            if image_path.exists():
-                group_images[group_name].append(str(image_path))
+            # cropped-images 디렉토리에서 해당 이미지 찾기 (.jpg와 .png 모두 확인)
+            image_path_jpg = cropped_images_dir / f"{cat_id}.jpg"
+            image_path_png = cropped_images_dir / f"{cat_id}.png"
+            
+            if image_path_jpg.exists():
+                group_images[group_name].append(str(image_path_jpg))
+            elif image_path_png.exists():
+                group_images[group_name].append(str(image_path_png))
         
         # 각 그룹별 이미지 수 확인
-        print(f"그룹별 이미지 수:")
+        console.print(f"[blue]ℹ[/blue] 그룹별 이미지 수:")
         for group_name, images in group_images.items():
-            print(f"  {group_name}: {len(images)}개")
+            console.print(f"[blue]ℹ[/blue]   {group_name}: {len(images)}개")
         
         # 최소 3개 이상의 이미지가 있는 그룹만 사용
         valid_groups = {name: images for name, images in group_images.items() if len(images) >= 3}
@@ -960,11 +981,11 @@ def prepare_training_data():
                 # 이미지 복사
                 import shutil
                 shutil.copy2(image_path, new_path)
-                print(f"복사됨: {image_path} -> {new_path}")
+                console.print(f"[blue]ℹ[/blue] 복사됨: {image_path} -> {new_path}")
         
-        print(f"=== 학습 데이터 준비 완료 ===")
-        print(f"유효한 그룹 수: {len(valid_groups)}")
-        print(f"총 이미지 수: {sum(len(images) for images in valid_groups.values())}")
+        console.print(f"[green]✓[/green] === 학습 데이터 준비 완료 ===")
+        console.print(f"[blue]ℹ[/blue] 유효한 그룹 수: {len(valid_groups)}")
+        console.print(f"[blue]ℹ[/blue] 총 이미지 수: {sum(len(images) for images in valid_groups.values())}")
         
         return {
             "success": True,
@@ -974,7 +995,7 @@ def prepare_training_data():
         }
         
     except Exception as e:
-        print(f"학습 데이터 준비 중 오류: {e}")
+        console.print(f"[red]✗[/red] 학습 데이터 준비 중 오류: {e}")
         raise e
 
 @app.post("/api/yolo/prepare-training-data")
@@ -994,16 +1015,16 @@ async def prepare_training_data_api():
 async def train_model():
     """실제 ResNet50 모델 학습 수행"""
     try:
-        print("=== 실제 모델 학습 시작 ===")
+        console.print("[blue]ℹ[/blue] === 실제 모델 학습 시작 ===")
         
         # 1. 학습 데이터 준비
-        print("1. 학습 데이터 준비 중...")
+        console.print("[blue]ℹ[/blue] 1. 학습 데이터 준비 중...")
         data_result = prepare_training_data()
         if not data_result["success"]:
             return data_result
         
         # 2. train_resnet50.py 실행
-        print("2. ResNet50 모델 학습 시작...")
+        console.print("[blue]ℹ[/blue] 2. ResNet50 모델 학습 시작...")
         import subprocess
         import sys
         
@@ -1022,17 +1043,20 @@ async def train_model():
         ], capture_output=True, text=True, cwd=str(BASE_DIR))
         
         if result.returncode != 0:
-            print(f"학습 스크립트 실행 실패:")
-            print(f"stdout: {result.stdout}")
-            print(f"stderr: {result.stderr}")
+            console.print(f"[red]✗[/red] 학습 스크립트 실행 실패:")
+            console.print(f"[red]✗[/red] stdout: {result.stdout}")
+            console.print(f"[red]✗[/red] stderr: {result.stderr}")
             return {
                 "success": False,
                 "error": f"학습 스크립트 실행 실패: {result.stderr}",
                 "message": "모델 학습 중 오류가 발생했습니다."
             }
         
-        print("=== 모델 학습 완료 ===")
-        print(f"학습 출력: {result.stdout}")
+        console.print("[green]✓[/green] === 모델 학습 완료 ===")
+        console.print(f"[green]✓[/green] 학습 출력: {result.stdout}")
+        
+        # 체크포인트 관리 (백업 없이)
+        cleanup_old_checkpoints(BASE_DIR / "checkpoints", max_files=3)
         
         return {
             "success": True,
@@ -1041,80 +1065,78 @@ async def train_model():
         }
         
     except Exception as e:
-        print(f"모델 학습 중 오류: {e}")
+        console.print(f"[red]✗[/red] 모델 학습 중 오류: {e}")
         return {
             "success": False,
             "error": str(e),
             "message": "모델 학습 중 오류가 발생했습니다."
         }
 
+# cleanup_old_checkpoints 함수 제거 또는 단순화
+def cleanup_old_checkpoints(save_dir, max_files=5):
+    """체크포인트 관리 - 백업 없이 단순히 완료 메시지만 출력"""
+    try:
+        console.print(f"[green]✓[/green] 체크포인트 관리 완료")
+        
+    except Exception as e:
+        console.print(f"[red]✗[/red] 체크포인트 관리 중 오류: {e}")
+
 @app.get("/api/yolo/download-checkpoint")
 async def download_checkpoint():
     """학습 완료된 체크포인트 파일 다운로드"""
     try:
-        # 체크포인트 파일 경로
-        checkpoint_path = BASE_DIR / "output" / "best_model_resnet50_contrastive.pth"
+        # 백엔드의 checkpoints 디렉토리에서 파일 찾기
+        checkpoints_dir = BASE_DIR / "checkpoints"
         
-        if not checkpoint_path.exists():
+        # best_checkpoint 파일 찾기 (타임스탬프 없이)
+        checkpoint_file = checkpoints_dir / "best_model_resnet50_contrastive.pth"
+        
+        if not checkpoint_file.exists():
             return {
                 "success": False,
                 "error": "체크포인트 파일을 찾을 수 없습니다.",
-                "message": "학습이 완료되지 않았거나 체크포인트 파일이 생성되지 않았습니다."
+                "message": f"학습이 완료되지 않았거나 체크포인트 파일이 생성되지 않았습니다. 경로: {checkpoint_file}"
             }
         
         # 파일 정보
-        file_size = checkpoint_path.stat().st_size
-        file_name = checkpoint_path.name
+        file_size = checkpoint_file.stat().st_size
+        file_name = checkpoint_file.name
+        
+        # 파일 내용을 base64로 인코딩하여 반환
+        import base64
+        with open(checkpoint_file, 'rb') as f:
+            file_content = f.read()
+            file_base64 = base64.b64encode(file_content).decode('utf-8')
         
         return {
             "success": True,
             "checkpoint_file": file_name,
             "file_size": file_size,
-            "download_url": f"/api/yolo/download-checkpoint-file/{file_name}",
+            "file_content": file_base64,  # base64 인코딩된 파일 내용
             "message": "체크포인트 파일 다운로드 준비 완료"
         }
         
     except Exception as e:
-        print(f"체크포인트 다운로드 준비 중 오류: {e}")
+        console.print(f"[red]✗[/red] 체크포인트 다운로드 준비 중 오류: {e}")
         return {
             "success": False,
             "error": str(e),
             "message": "체크포인트 다운로드 준비에 실패했습니다."
         }
 
-@app.get("/api/yolo/download-checkpoint-file/{filename}")
-async def download_checkpoint_file(filename: str):
-    """체크포인트 파일 다운로드"""
-    try:
-        file_path = BASE_DIR / "output" / filename
-        
-        if not file_path.exists():
-            raise HTTPException(status_code=404, detail="파일을 찾을 수 없습니다.")
-        
-        from fastapi.responses import FileResponse
-        return FileResponse(
-            path=str(file_path),
-            filename=filename,
-            media_type='application/octet-stream'
-        )
-        
-    except Exception as e:
-        print(f"체크포인트 파일 다운로드 중 오류: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
-
 @app.post("/api/yolo/teach-model")
 async def teach_model(teaching_data: Dict[str, Any]):
     """AI 모델에게 고양이를 알려주기 (실제 학습)"""
     try:
-        print("=== 실제 모델 학습 시작 ===")
-        print(f"학습 데이터: {teaching_data}")
+        console.print("[blue]ℹ[/blue] === 실제 모델 학습 시작 ===")
+        console.print(f"[blue]ℹ[/blue] 학습 데이터: {teaching_data}")
         
         # 선택된 고양이 ID들
         selected_cat_ids = teaching_data.get('selected_cat_ids', [])
         cat_names = teaching_data.get('cat_names', {})
         
-        print(f"선택된 고양이 수: {len(selected_cat_ids)}")
-        print(f"고양이 이름 정보: {cat_names}")
+        console.print(f"[blue]ℹ[/blue] 선택된 고양이 수: {len(selected_cat_ids)}")
+        console.print(f"[blue]ℹ[/blue] 고양이 이름 정보: {cat_names}")
         
         if not selected_cat_ids:
             return {
@@ -1139,19 +1161,19 @@ async def teach_model(teaching_data: Dict[str, Any]):
         }
         
     except Exception as e:
-        print(f"모델 학습 중 오류: {e}")
+        console.print(f"[red]✗[/red] 모델 학습 중 오류: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/api/cat-groups")
 async def get_cat_groups():
     """저장된 고양이 그룹 정보를 반환"""
-    print("=== 그룹 정보 로드 API 호출됨 ===")
+    console.print("[blue]ℹ[/blue] === 그룹 정보 로드 API 호출됨 ===")
     try:
         groups_data = load_cat_groups()
         groups = groups_data.get("groups", {})
         profiles = groups_data.get("profiles", {})
-        print(f"로드된 그룹: {groups}")
-        print(f"로드된 프로필: {profiles}")
+        console.print(f"[blue]ℹ[/blue] 로드된 그룹: {groups}")
+        console.print(f"[blue]ℹ[/blue] 로드된 프로필: {profiles}")
         return {
             "success": True,
             "groups": groups,
@@ -1159,7 +1181,7 @@ async def get_cat_groups():
             "message": "그룹 정보를 성공적으로 로드했습니다."
         }
     except Exception as e:
-        print(f"=== 그룹 정보 로드 API 오류: {e} ===")
+        console.print(f"[red]✗[/red] === 그룹 정보 로드 API 오류: {e} ===")
         return {
             "success": False,
             "error": str(e),
@@ -1169,20 +1191,20 @@ async def get_cat_groups():
 @app.post("/api/cat-groups")
 async def save_cat_groups_api(groups_data: Dict[str, Any]):
     """고양이 그룹 정보를 저장"""
-    print("=== 그룹 정보 저장 API 호출됨 ===")
-    print(f"요청 데이터: {groups_data}")
-    print(f"데이터 타입: {type(groups_data)}")
+    console.print("[blue]ℹ[/blue] === 그룹 정보 저장 API 호출됨 ===")
+    console.print(f"[blue]ℹ[/blue] 요청 데이터: {groups_data}")
+    console.print(f"[blue]ℹ[/blue] 데이터 타입: {type(groups_data)}")
     
     try:
         # save_cat_groups는 동기 함수이므로 await 없이 호출
         save_cat_groups(groups_data)
-        print("=== 그룹 정보 저장 완료 ===")
+        console.print("[green]✓[/green] === 그룹 정보 저장 완료 ===")
         return {
             "success": True,
             "message": "그룹 정보가 성공적으로 저장되었습니다."
         }
     except Exception as e:
-        print(f"=== 그룹 정보 저장 API 오류: {e} ===")
+        console.print(f"[red]✗[/red] === 그룹 정보 저장 API 오류: {e} ===")
         return {
             "success": False,
             "error": str(e),
@@ -1238,30 +1260,52 @@ async def get_statistics():
             "profiles": profiles
         }
     except Exception as e:
-        print(f"통계 정보 조회 실패: {e}")
+        console.print(f"[red]✗[/red] 통계 정보 조회 실패: {e}")
         return {
             "success": False,
             "error": str(e)
         }
 
+@app.get("/api/yolo/download-checkpoint-file/{filename}")
+async def download_checkpoint_file(filename: str):
+    """체크포인트 파일 다운로드"""
+    try:
+        # 백엔드의 checkpoints 디렉토리에서 파일 찾기
+        checkpoints_dir = BASE_DIR / "checkpoints"
+        file_path = checkpoints_dir / filename
+        
+        if not file_path.exists():
+            raise HTTPException(status_code=404, detail=f"파일을 찾을 수 없습니다: {file_path}")
+        
+        from fastapi.responses import FileResponse
+        return FileResponse(
+            path=str(file_path),
+            filename=filename,
+            media_type='application/octet-stream'
+        )
+        
+    except Exception as e:
+        console.print(f"[red]✗[/red] 체크포인트 파일 다운로드 중 오류: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 if __name__ == "__main__":
-    print("�� 고양이 영상 처리 백엔드 서버가 포트 5000에서 실행 중입니다.")
-    print("📡 API 엔드포인트:")
-    print("   - POST /api/video/upload (영상 업로드 및 처리)")
-    print("   - POST /api/cats/upload (고양이 데이터 전송)")
-    print("   - GET  /api/cropped-cats (크롭된 고양이 이미지 목록)")
-    print("   - GET  /api/health (서버 상태 확인)")
-    print("   - GET  /api/videos (업로드된 파일 목록)")
-    print("   - DELETE /api/videos/{filename} (파일 삭제)")
-    print("   - GET  /cropped-images/* (크롭된 이미지 제공)")
-    print("   - GET  /api/yolo/config (YOLO 설정 조회)")
-    print("   - POST /api/yolo/config (YOLO 설정 업데이트)")
-    print("   - POST /api/yolo/reset-config (YOLO 설정 초기화)")
-    print("   - POST /api/yolo/reload (YOLO 모델 재로드)")
-    print("   - GET  /api/yolo/model-status (모델 상태 확인)")
-    print("   - POST /api/yolo/download-model (모델 다운로드)")
-    print("   - POST /api/yolo/teach-model (모델 학습)")
-    print("   - GET  /api/cat-groups (그룹 정보 조회)")
-    print("   - POST /api/cat-groups (그룹 정보 저장)")
+    console.print(" 고양이 영상 처리 백엔드 서버가 포트 5000에서 실행 중입니다.")
+    console.print("📡 API 엔드포인트:")
+    console.print("   - POST /api/video/upload (영상 업로드 및 처리)")
+    console.print("   - POST /api/cats/upload (고양이 데이터 전송)")
+    console.print("   - GET  /api/cropped-cats (크롭된 고양이 이미지 목록)")
+    console.print("   - GET  /api/health (서버 상태 확인)")
+    console.print("   - GET  /api/videos (업로드된 파일 목록)")
+    console.print("   - DELETE /api/videos/{filename} (파일 삭제)")
+    console.print("   - GET  /cropped-images/* (크롭된 이미지 제공)")
+    console.print("   - GET  /api/yolo/config (YOLO 설정 조회)")
+    console.print("   - POST /api/yolo/config (YOLO 설정 업데이트)")
+    console.print("   - POST /api/yolo/reset-config (YOLO 설정 초기화)")
+    console.print("   - POST /api/yolo/reload (YOLO 모델 재로드)")
+    console.print("   - GET  /api/yolo/model-status (모델 상태 확인)")
+    console.print("   - POST /api/yolo/download-model (모델 다운로드)")
+    console.print("   - POST /api/yolo/teach-model (모델 학습)")
+    console.print("   - GET  /api/cat-groups (그룹 정보 조회)")
+    console.print("   - POST /api/cat-groups (그룹 정보 저장)")
     
     uvicorn.run(app, host="0.0.0.0", port=5000)

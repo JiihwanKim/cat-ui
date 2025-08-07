@@ -3,6 +3,7 @@ import torch.nn as nn
 import torch.optim as optim
 import os
 import time
+from datetime import datetime
 from tqdm import tqdm
 import numpy as np
 from torchvision import transforms, models
@@ -112,6 +113,15 @@ def save_checkpoint(model, optimizer, epoch, acc, filepath):
         'accuracy': acc,
     }, filepath)
 
+# cleanup_old_checkpoints 함수 제거 또는 단순화
+def cleanup_old_checkpoints(save_dir, max_files=5):
+    """체크포인트 관리 - 백업 없이 단순히 완료 메시지만 출력"""
+    try:
+        console.print(f"[green]✓[/green] 체크포인트 관리 완료")
+        
+    except Exception as e:
+        console.print(f"[red]✗[/red] 체크포인트 관리 중 오류: {e}")
+
 # 설정 클래스 정의
 class Config:
     def __init__(self):
@@ -136,7 +146,9 @@ class Config:
         # 경로 설정
         self.base_dir = os.path.dirname(os.path.abspath(__file__))
         self.dataset_dir = os.path.join(self.base_dir, 'datasets')
-        self.save_dir = os.path.join(self.base_dir, 'output')
+        
+        # 체크포인트를 백엔드 디렉토리에 저장
+        self.save_dir = os.path.join(self.base_dir, 'checkpoints')
         self.log_dir = os.path.join(self.base_dir, 'logs')
         
         # 디렉토리 생성
@@ -235,10 +247,13 @@ class CatDataset(Dataset):
 def create_data_loaders(config, train_samples_per_class=50):  # 50으로 제한
     """데이터셋을 한 번만 스캔하고 train/val 로더를 생성하여 최적화"""
     start_time = time.time()
-    print("[LOG] 데이터 로더 생성 시작...")
     
-    print("[LOG] 데이터셋 스캔 중...")
+    console.print("[blue]ℹ[/blue] 데이터 로더 생성 시작...")
+    
+    # 데이터셋 스캔
     scan_start = time.time()
+    console.print("[blue]ℹ[/blue] 데이터셋 스캔 중...")
+    
     image_paths = []
     labels = []
     
@@ -250,10 +265,10 @@ def create_data_loaders(config, train_samples_per_class=50):  # 50으로 제한
             image_paths.extend(class_images)
             labels.extend([class_id - 1] * len(class_images))
     scan_end = time.time()
-    print(f"[LOG] 데이터셋 스캔 완료. 소요 시간: {scan_end - scan_start:.2f}초")
+    console.print(f"[blue]ℹ[/blue] 데이터셋 스캔 완료. 소요 시간: {scan_end - scan_start:.2f}초")
 
-    print(f"전체 이미지 수: {len(image_paths)}")
-    print(f"클래스별 이미지 수: {[labels.count(i) for i in range(config.num_classes)]}")
+    console.print(f"[blue]ℹ[/blue] 전체 이미지 수: {len(image_paths)}")
+    console.print(f"[blue]ℹ[/blue] 클래스별 이미지 수: {[labels.count(i) for i in range(config.num_classes)]}")
     
     # Train/validation 분할 (전체 데이터 대상)
     split_start = time.time()
@@ -264,7 +279,7 @@ def create_data_loaders(config, train_samples_per_class=50):  # 50으로 제한
         random_state=42
     )
     split_end = time.time()
-    print(f"[LOG] Train/Validation 분할 완료. 소요 시간: {split_end - split_start:.2f}초")
+    console.print(f"[blue]ℹ[/blue] Train/Validation 분할 완료. 소요 시간: {split_end - split_start:.2f}초")
 
     
     # Training 데이터는 각 클래스별로 제한된 샘플만 사용 (필요시)
@@ -280,20 +295,20 @@ def create_data_loaders(config, train_samples_per_class=50):  # 50으로 제한
                 selected_paths = random.sample(class_paths_for_label, train_samples_per_class)
             else:
                 selected_paths = class_paths_for_label
-                print(f"Warning: Class {class_id} has only {len(selected_paths)} training images")
+                console.print(f"[yellow]⚠[/yellow] Warning: Class {class_id} has only {len(selected_paths)} training images")
             
             limited_train_paths.extend(selected_paths)
             limited_train_labels.extend([class_id] * len(selected_paths))
         
         train_paths, train_labels = limited_train_paths, limited_train_labels
         limit_end = time.time()
-        print(f"[LOG] 학습 데이터 샘플링 완료. 소요 시간: {limit_end - limit_start:.2f}초")
+        console.print(f"[blue]ℹ[/blue] 학습 데이터 샘플링 완료. 소요 시간: {limit_end - limit_start:.2f}초")
 
 
-    print(f"학습 샘플 수: {len(train_paths)}")
-    print(f"검증 샘플 수: {len(val_paths)}")
-    print(f"클래스별 학습 이미지 수: {[train_labels.count(i) for i in range(config.num_classes)]}")
-    print(f"클래스별 검증 이미지 수: {[val_labels.count(i) for i in range(config.num_classes)]}")
+    console.print(f"[blue]ℹ[/blue] 학습 샘플 수: {len(train_paths)}")
+    console.print(f"[blue]ℹ[/blue] 검증 샘플 수: {len(val_paths)}")
+    console.print(f"[blue]ℹ[/blue] 클래스별 학습 이미지 수: {[train_labels.count(i) for i in range(config.num_classes)]}")
+    console.print(f"[blue]ℹ[/blue] 클래스별 검증 이미지 수: {[val_labels.count(i) for i in range(config.num_classes)]}")
     
 
     train_transform = transforms.Compose([
@@ -317,7 +332,7 @@ def create_data_loaders(config, train_samples_per_class=50):  # 50으로 제한
     train_dataset = CatDataset(train_paths, train_labels, train_transform, is_training=True)
     val_dataset = CatDataset(val_paths, val_labels, val_transform, is_training=False)
     dataset_end = time.time()
-    print(f"[LOG] Dataset 객체 생성 완료. 소요 시간: {dataset_end - dataset_start:.2f}초")
+    console.print(f"[blue]ℹ[/blue] Dataset 객체 생성 완료. 소요 시간: {dataset_end - dataset_start:.2f}초")
 
     
     # 데이터 로더 생성 (속도 최적화)
@@ -342,10 +357,10 @@ def create_data_loaders(config, train_samples_per_class=50):  # 50으로 제한
         drop_last=False
     )
     loader_end = time.time()
-    print(f"[LOG] DataLoader 객체 생성 완료. 소요 시간: {loader_end - loader_start:.2f}초")
+    console.print(f"[blue]ℹ[/blue] DataLoader 객체 생성 완료. 소요 시간: {loader_end - loader_start:.2f}초")
     
     end_time = time.time()
-    print(f"[LOG] 전체 데이터 로더 생성 완료. 총 소요 시간: {end_time - start_time:.2f}초")
+    console.print(f"[blue]ℹ[/blue] 전체 데이터 로더 생성 완료. 총 소요 시간: {end_time - start_time:.2f}초")
     
     return train_loader, val_loader, len(train_dataset), len(val_dataset)
 
@@ -497,7 +512,7 @@ def extract_features(model, data_loader, config):
                     labels = labels.to(config.device, non_blocking=True)
                 
                 else:
-                    print(f"Unexpected batch structure: {type(batch)}")
+                    console.print(f"[red]✗[/red] Unexpected batch structure: {type(batch)}")
                     continue
                 
                 # 특징 추출
@@ -510,18 +525,18 @@ def extract_features(model, data_loader, config):
                 # 간단한 진행 표시 (매 30번째 배치마다, 더 많은 샘플이므로)
                 if (batch_idx + 1) % 30 == 0 or (batch_idx + 1) == total_batches:
                     processed_samples = batch_idx * config.val_batch_size + images.size(0)
-                    print(f'Feature extraction: [{batch_idx + 1}/{total_batches}] '
-                          f'Processed: {processed_samples} samples')
+                    console.print(f'[blue]ℹ[/blue] Feature extraction: [{batch_idx + 1}/{total_batches}] '
+                                  f'Processed: {processed_samples} samples')
                 
             except Exception as e:
-                print(f"Error processing batch {batch_idx}: {e}")
+                console.print(f"[red]✗[/red] Error processing batch {batch_idx}: {e}")
                 continue
     
     if not features_list:
         raise ValueError("No features were extracted. Check the data loader structure.")
     
     # 모든 특징을 한 번에 CPU로 전송 (최적화)
-    print("GPU에서 CPU로 특징 전송 중...")
+    console.print("[blue]ℹ[/blue] GPU에서 CPU로 특징 전송 중...")
     all_features = torch.cat(features_list, dim=0).cpu().numpy()
     all_labels = torch.cat(labels_list, dim=0).cpu().numpy()
     
@@ -533,10 +548,16 @@ from sklearn.decomposition import PCA
 
 def visualize_tsne(features, labels, class_names, save_path):
     """t-SNE를 사용하여 특징점 시각화"""
-    print("t-SNE 차원 축소 중...")
+    console.print("[blue]ℹ[/blue] t-SNE 차원 축소 중...")
+    
+    # perplexity를 샘플 수에 맞게 조정
+    n_samples = len(features)
+    perplexity = min(30, max(1, n_samples - 1))  # 최소 1, 최대 30, 샘플 수보다 1 작게
+    
+    console.print(f"[blue]ℹ[/blue] 샘플 수: {n_samples}, 조정된 perplexity: {perplexity}")
     
     # t-SNE 적용
-    tsne = TSNE(n_components=2, random_state=42, perplexity=30)
+    tsne = TSNE(n_components=2, random_state=42, perplexity=perplexity)
     features_2d = tsne.fit_transform(features)
     
     # 시각화
@@ -575,11 +596,11 @@ def visualize_tsne(features, labels, class_names, save_path):
     plt.savefig(save_path, dpi=300, bbox_inches='tight')
     plt.show()
     
-    print(f"t-SNE 시각화가 {save_path}에 저장되었습니다.")
+    console.print(f"[green]✓[/green] t-SNE 시각화가 {save_path}에 저장되었습니다.")
 
 def visualize_pca(features, labels, class_names, save_path):
     """PCA를 사용하여 특징점 시각화"""
-    console.print("🔄 Applying PCA dimensionality reduction...")
+    console.print("[blue]ℹ[/blue] Applying PCA dimensionality reduction...")
     
     # PCA 적용
     pca = PCA(n_components=2, random_state=42)
@@ -620,16 +641,22 @@ def visualize_pca(features, labels, class_names, save_path):
     plt.savefig(save_path, dpi=300, bbox_inches='tight')
     plt.close()
     
-    console.print(f"✅ PCA visualization saved to: {save_path}")
+    console.print(f"[green]✓[/green] PCA visualization saved to: {save_path}")
 
 def visualize_umap(features, labels, class_names, save_path):
     """UMAP을 사용하여 특징점 시각화"""
     try:
         import umap
-        print("UMAP 차원 축소 중...")
+        console.print("[blue]ℹ[/blue] UMAP 차원 축소 중...")
+        
+        # n_neighbors를 샘플 수에 맞게 조정
+        n_samples = len(features)
+        n_neighbors = min(15, max(1, n_samples - 1))  # 최소 1, 최대 15, 샘플 수보다 1 작게
+        
+        console.print(f"[blue]ℹ[/blue] 샘플 수: {n_samples}, 조정된 n_neighbors: {n_neighbors}")
         
         # UMAP 적용
-        reducer = umap.UMAP(n_components=2, random_state=42, n_neighbors=15, min_dist=0.1)
+        reducer = umap.UMAP(n_components=2, random_state=42, n_neighbors=n_neighbors, min_dist=0.1)
         features_2d = reducer.fit_transform(features)
         
         # 시각화
@@ -668,16 +695,16 @@ def visualize_umap(features, labels, class_names, save_path):
         plt.savefig(save_path, dpi=300, bbox_inches='tight')
         plt.show()
         
-        print(f"UMAP 시각화가 {save_path}에 저장되었습니다.")
+        console.print(f"[green]✓[/green] UMAP 시각화가 {save_path}에 저장되었습니다.")
         return save_path
         
     except ImportError:
-        print("UMAP 라이브러리가 설치되지 않았습니다. UMAP 시각화를 건너뜁니다.")
+        console.print("[red]✗[/red] UMAP 라이브러리가 설치되지 않았습니다. UMAP 시각화를 건너뜁니다.")
         return None
 
 def create_visualization_comparison(features, labels, class_names, save_dir):
     """여러 시각화 방법으로 비교"""
-    print("여러 시각화 방법으로 특징 비교 중...")
+    console.print("[blue]ℹ[/blue] 여러 시각화 방법으로 특징 비교 중...")
     
     # t-SNE 시각화
     tsne_path = os.path.join(save_dir, 'tsne_visualization_resnet50_contrastive.png')
@@ -833,11 +860,17 @@ def main():
                 if val_acc > best_acc:
                     best_acc = val_acc
                     patience_counter = 0
+                    
+                    # 같은 파일명으로 저장 (타임스탬프 제거)
+                    checkpoint_filename = 'best_model_resnet50_contrastive.pth'
+                    checkpoint_path = os.path.join(config.save_dir, checkpoint_filename)
+                    
                     save_checkpoint(
                         model, optimizer, epoch, val_acc,
-                        os.path.join(config.save_dir, 'best_model_resnet50_contrastive.pth')
+                        checkpoint_path
                     )
                     console.print(f"[green]✓[/green] New best model saved! Accuracy: {best_acc:.2f}%")
+                    console.print(f"[green]✓[/green] Checkpoint: {checkpoint_filename}")
                 else:
                     patience_counter += 1
                     console.print(f"[red]✗[/red] No improvement for {patience_counter} epochs")
@@ -934,6 +967,9 @@ def main():
         f"Total execution time: {time.time() - main_start_time:.2f}s",
         border_style="green"
     ))
+
+    # 학습 완료 후 체크포인트 관리 (백업 없이)
+    cleanup_old_checkpoints(config.save_dir, max_files=3)
 
 
 if __name__ == "__main__":

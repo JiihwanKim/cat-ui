@@ -189,7 +189,8 @@ function App() {
 
   const showGlobalMessage = (message, type = 'info') => {
     setGlobalMessage({ text: message, type });
-    setTimeout(() => setGlobalMessage(null), 3000);
+    // 학습 완료 알람의 표시 시간을 1초로 단축
+    setTimeout(() => setGlobalMessage(null), 1000);
   };
 
   const handleDarkModeToggle = () => {
