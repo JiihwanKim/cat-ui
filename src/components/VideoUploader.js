@@ -360,6 +360,9 @@ const VideoUploader = ({ onVideoUpload, darkMode = false }) => {
                 totalCats: response.summary.totalCats,
                 totalCropped: response.summary.totalCropped
               });
+              
+              // 업로드 완료 후 파일 목록 초기화
+              setFiles([]);
             } else {
               setMessage({ text: response.error || '업로드 중 오류가 발생했습니다.', type: 'error' });
             }
