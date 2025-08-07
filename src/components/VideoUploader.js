@@ -301,7 +301,8 @@ const VideoUploader = ({ onVideoUpload, darkMode = false }) => {
     accept: {
       'video/*': ['.mp4', '.avi', '.mov', '.mkv']
     },
-    multiple: true
+    multiple: true,
+    disabled: uploading
   });
 
   const removeFile = (index) => {
@@ -402,15 +403,19 @@ const VideoUploader = ({ onVideoUpload, darkMode = false }) => {
   };
 
   return (
-    <UploadContainer {...getRootProps()} darkMode={darkMode}>
+    <UploadContainer 
+      {...(uploading ? {} : getRootProps())} 
+      darkMode={darkMode}
+      style={{ pointerEvents: uploading ? 'none' : 'auto' }}
+    >
       <input {...getInputProps()} />
       <Dropzone>
         <UploadIcon>📹</UploadIcon>
         <UploadText darkMode={darkMode}>
-          {isDragActive ? '파일을 여기에 놓으세요!' : '비디오 파일을 업로드하세요'}
+          {uploading ? '업로드 중...' : isDragActive ? '파일을 여기에 놓으세요!' : '비디오 파일을 업로드하세요'}
         </UploadText>
         <UploadDescription darkMode={darkMode}>
-          MP4, AVI, MOV, MKV 형식의 비디오 파일을 드래그 앤 드롭하거나 클릭하여 선택하세요.
+          {uploading ? '업로드가 완료될 때까지 기다려주세요.' : 'MP4, AVI, MOV, MKV 형식의 비디오 파일을 드래그 앤 드롭하거나 클릭하여 선택하세요.'}
           <br />
           AI가 자동으로 고양이를 감지하고 개별 이미지로 추출합니다.
         </UploadDescription>
