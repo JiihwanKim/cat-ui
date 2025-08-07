@@ -599,7 +599,7 @@ const StatusTitle = styled.h4`
   transition: color 0.3s ease;
 `;
 
-const StatusMessage = styled.div`
+const StatusBarMessage = styled.div`
   color: ${props => props.darkMode ? '#a0aec0' : '#4a5568'};
   font-size: 0.9rem;
   line-height: 1.4;
@@ -2943,9 +2943,9 @@ function CatGallery({
             </StatusTitle>
           </StatusHeader>
           
-          <StatusMessage darkMode={darkMode}>
+          <StatusBarMessage darkMode={darkMode}>
             {statusBar.message}
-          </StatusMessage>
+          </StatusBarMessage>
           
           {statusBar.progress > 0 && (
             <StatusProgress darkMode={darkMode}>
