@@ -11,8 +11,8 @@ const AppContainer = styled.div`
   padding: 40px 20px;
   min-height: 100vh;
   animation: fadeIn 0.3s ease;
-  background: ${props => props.darkMode ? '#1a202c' : '#ffffff'};
-  color: ${props => props.darkMode ? '#e2e8f0' : '#2d3748'};
+  background: ${props => props.$darkMode ? '#1a202c' : '#ffffff'};
+  color: ${props => props.$darkMode ? '#e2e8f0' : '#2d3748'};
   transition: all 0.2s ease;
 `;
 
@@ -66,7 +66,7 @@ const Header = styled.header`
 `;
 
 const Title = styled.h1`
-  color: ${props => props.darkMode ? '#e2e8f0' : '#2d3748'};
+  color: ${props => props.$darkMode ? '#e2e8f0' : '#2d3748'};
   font-size: 3.5rem;
   font-weight: 700;
   margin-bottom: 16px;
@@ -80,7 +80,7 @@ const Title = styled.h1`
 `;
 
 const Subtitle = styled.p`
-  color: ${props => props.darkMode ? '#a0aec0' : '#2d3748'};
+  color: ${props => props.$darkMode ? '#a0aec0' : '#2d3748'};
   font-size: 1.25rem;
   font-weight: 500;
   max-width: 600px;
@@ -97,11 +97,11 @@ const TabContainer = styled.div`
   display: flex;
   justify-content: center;
   margin-bottom: 40px;
-  background: ${props => props.darkMode ? '#2d3748' : '#f7fafc'};
+  background: ${props => props.$darkMode ? '#2d3748' : '#f7fafc'};
   border-radius: 20px;
   padding: 8px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-  border: 1px solid ${props => props.darkMode ? '#4a5568' : '#e2e8f0'};
+  border: 1px solid ${props => props.$darkMode ? '#4a5568' : '#e2e8f0'};
   transition: all 0.3s ease;
 `;
 
@@ -109,8 +109,8 @@ const Tab = styled.button`
   padding: 16px 32px;
   margin: 0 4px;
   border: none;
-  background: ${props => props.active ? '#3182ce' : 'transparent'};
-  color: ${props => props.active ? 'white' : props.darkMode ? '#a0aec0' : '#4a5568'};
+  background: ${props => props.$active ? '#3182ce' : 'transparent'};
+  color: ${props => props.$active ? 'white' : props.$darkMode ? '#a0aec0' : '#4a5568'};
   border-radius: 16px;
   cursor: pointer;
   font-weight: 600;
@@ -120,7 +120,7 @@ const Tab = styled.button`
   overflow: hidden;
   
   &:hover {
-    background: ${props => props.active ? '#2c5aa0' : props.darkMode ? '#4a5568' : '#edf2f7'};
+    background: ${props => props.$active ? '#2c5aa0' : props.$darkMode ? '#4a5568' : '#edf2f7'};
     transform: translateY(-1px);
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   }
@@ -178,6 +178,7 @@ function App() {
   const [savedGroups, setSavedGroups] = useState({});
   const [globalMessage, setGlobalMessage] = useState('');
   const [darkMode, setDarkMode] = useState(false);
+  const [uploadComplete, setUploadComplete] = useState(false);
 
   // 갤러리 탭이 활성화될 때 저장된 고양이 데이터 로드
   useEffect(() => {
@@ -188,7 +189,7 @@ function App() {
 
   const showGlobalMessage = (message, type = 'info') => {
     setGlobalMessage({ text: message, type });
-    setTimeout(() => setGlobalMessage(''), 3000);
+    setTimeout(() => setGlobalMessage(null), 3000);
   };
 
   const handleDarkModeToggle = () => {
@@ -266,6 +267,7 @@ function App() {
     
     setCroppedCats(processedCats);
     setUploadSummary(summary);
+    setUploadComplete(true); // 업로드 완료 상태 설정
     setCurrentStep('gallery');
     setActiveTab('gallery');
   };
@@ -282,6 +284,7 @@ function App() {
     setCurrentStep('upload');
     setActiveTab('upload');
     setUploadSummary(null);
+    setUploadComplete(false); // 업로드 상태 초기화
   };
 
   const handleBackToProcessing = () => {
@@ -291,33 +294,37 @@ function App() {
 
   const handleTabChange = (tab) => {
     setActiveTab(tab);
+    // 업로드 탭을 선택할 때 currentStep을 upload로 설정
+    if (tab === 'upload') {
+      setCurrentStep('upload');
+    }
   };
 
   return (
-    <AppContainer darkMode={darkMode}>
-      {globalMessage && (
+    <AppContainer $darkMode={darkMode}>
+      {globalMessage && typeof globalMessage === 'object' && globalMessage.text && (
         <GlobalMessage className={globalMessage.type}>
           {globalMessage.text}
         </GlobalMessage>
       )}
 
       <Header>
-        <Title darkMode={darkMode}>🐱 다둥이 매니저</Title>
-        <Subtitle darkMode={darkMode}>AI가 영상에서 고양이를 자동으로 감지하고 관리해드립니다</Subtitle>
+        <Title $darkMode={darkMode}>🐱 다둥이 매니저</Title>
+        <Subtitle $darkMode={darkMode}>AI가 영상에서 고양이를 자동으로 감지하고 관리해드립니다</Subtitle>
       </Header>
 
-      <TabContainer darkMode={darkMode}>
+      <TabContainer $darkMode={darkMode}>
         <Tab 
-          active={activeTab === 'upload'} 
+          $active={activeTab === 'upload'} 
           onClick={() => handleTabChange('upload')}
-          darkMode={darkMode}
+          $darkMode={darkMode}
         >
           📹 영상 업로드
         </Tab>
         <Tab 
-          active={activeTab === 'gallery'} 
+          $active={activeTab === 'gallery'} 
           onClick={() => handleTabChange('gallery')}
-          darkMode={darkMode}
+          $darkMode={darkMode}
         >
           🐱 우리집 고양이 알려주기
         </Tab>
@@ -326,7 +333,13 @@ function App() {
       <MainContent>
         <TabContent active={activeTab === 'upload'}>
           {currentStep === 'upload' && (
-            <VideoUploader onVideoUpload={handleVideoUpload} darkMode={darkMode} />
+            <VideoUploader 
+              onVideoUpload={handleVideoUpload} 
+              $darkMode={darkMode}
+              uploadComplete={uploadComplete}
+              onResetUpload={() => setUploadComplete(false)}
+              onShowGlobalMessage={showGlobalMessage}
+            />
           )}
 
           {currentStep === 'processing' && videoFile && (
@@ -334,7 +347,7 @@ function App() {
               videoFile={videoFile} 
               onCatsCropped={handleCatsCropped}
               onBack={handleBackToUpload}
-              darkMode={darkMode}
+              $darkMode={darkMode}
             />
           )}
         </TabContent>
@@ -349,12 +362,13 @@ function App() {
             onRefresh={loadSavedCats}
             savedGroups={savedGroups}
             onShowGlobalMessage={showGlobalMessage}
-            darkMode={darkMode}
+            $darkMode={darkMode}
+            activeTab={activeTab}
           />
         </TabContent>
       </MainContent>
 
-      <FloatingMenu darkMode={darkMode} onDarkModeToggle={handleDarkModeToggle} />
+      <FloatingMenu $darkMode={darkMode} onDarkModeToggle={handleDarkModeToggle} />
     </AppContainer>
   );
 }

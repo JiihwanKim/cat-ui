@@ -148,16 +148,16 @@ const GroupSelector = styled.div`
 const GroupButton = styled.button`
   padding: 12px 20px;
   border: 2px solid ${props => {
-    if (props.isActive) return '#38a169';
+    if (props.$isActive) return '#38a169';
     if (props.selected) return '#3182ce';
-    return props.borderColor || '#e2e8f0';
+    return props.$borderColor || '#e2e8f0';
   }};
   background: ${props => {
-    if (props.isActive) return '#38a169';
+    if (props.$isActive) return '#38a169';
     if (props.selected) return '#3182ce';
-    return props.backgroundColor || '#ffffff';
+    return props.$backgroundColor || '#ffffff';
   }};
-  color: ${props => props.selected || props.isActive ? 'white' : '#2d3748'};
+  color: ${props => props.selected || props.$isActive ? 'white' : '#2d3748'};
   border-radius: 20px;
   cursor: pointer;
   font-size: 1rem;
@@ -173,9 +173,9 @@ const GroupButton = styled.button`
   justify-content: center;
   
   &:hover {
-    border-color: ${props => props.isActive ? '#2f855a' : '#3182ce'};
+    border-color: ${props => props.$isActive ? '#2f855a' : '#3182ce'};
     background: ${props => {
-      if (props.isActive) return '#2f855a';
+      if (props.$isActive) return '#2f855a';
       if (props.selected) return '#2c5aa0';
       return '#f7fafc';
     }};
@@ -207,7 +207,7 @@ const GroupButton = styled.button`
     transform: translateY(-1px);
   `}
   
-  ${props => props.isActive && `
+  ${props => props.$isActive && `
     box-shadow: 0 4px 16px rgba(56, 161, 105, 0.3);
     transform: translateY(-1px);
   `}
@@ -360,7 +360,7 @@ const BulkActionSection = styled.div`
   background: ${props => props.darkMode ? '#4a5568' : '#f7fafc'};
   border-radius: 16px;
   border: 1px solid ${props => props.darkMode ? '#718096' : '#e2e8f0'};
-  display: ${props => props.show ? 'block' : 'none'};
+  display: ${props => props.$show ? 'block' : 'none'};
   animation: fadeIn 0.5s ease-out;
   transition: all 0.3s ease;
 `;
@@ -423,7 +423,7 @@ const CatCard = styled.div`
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
   border: 2px solid ${props => {
     if (props.selected) return '#3182ce';
-    if (props.isProfile) return '#38a169';
+    if (props.$isProfile) return '#38a169';
     return props.darkMode ? '#718096' : '#e2e8f0';
   }};
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -436,7 +436,7 @@ const CatCard = styled.div`
     box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
     border-color: ${props => {
       if (props.selected) return '#3182ce';
-      if (props.isProfile) return '#2f855a';
+      if (props.$isProfile) return '#2f855a';
       return '#3182ce';
     }};
   }
@@ -486,9 +486,9 @@ const CatTitle = styled.h3`
   color: ${props => props.darkMode ? '#e2e8f0' : '#2d3748'};
   font-weight: 600;
   padding: 8px 12px;
-  background: ${props => props.groupColor || 'rgba(102, 126, 234, 0.1)'};
+  background: ${props => props.$groupColor || 'rgba(102, 126, 234, 0.1)'};
   border-radius: 8px;
-  border-left: 4px solid ${props => props.groupColor || 'rgba(102, 126, 234, 0.8)'};
+  border-left: 4px solid ${props => props.$groupColor || 'rgba(102, 126, 234, 0.8)'};
   display: inline-block;
 `;
 
@@ -736,11 +736,11 @@ const GallerySection = styled.div`
   overflow: hidden;
   background: ${props => props.darkMode ? '#2d3748' : '#ffffff'};
   transition: all 0.3s ease;
-  ${props => props.isExpanded && `
+  ${props => props.$isExpanded && `
     box-shadow: 0 8px 32px rgba(49, 130, 206, 0.15);
     border-color: #3182ce;
   `}
-  ${props => props.highlighted && `
+  ${props => props.$highlighted && `
     animation: pulse 0.4s ease-in-out;
     box-shadow: 0 8px 32px rgba(49, 130, 206, 0.25);
     border-color: #3182ce;
@@ -765,21 +765,21 @@ const GalleryHeader = styled.div`
   
   &:hover {
     background: ${props => {
-      if (props.isExpanded) {
+      if (props.$isExpanded) {
         return props.darkMode ? '#2c5aa0' : '#2c5aa0';
       }
-      if (props.isActive) {
+      if (props.$isActive) {
         return props.darkMode ? '#2f855a' : '#2f855a';
       }
       return props.darkMode ? '#718096' : '#edf2f7';
     }};
   }
   
-  ${props => props.isExpanded && `
+  ${props => props.$isExpanded && `
     background: ${props.darkMode ? '#3182ce' : '#3182ce'};
   `}
   
-  ${props => props.isActive && `
+  ${props => props.$isActive && `
     background: ${props.darkMode ? '#38a169' : '#38a169'};
   `}
 `;
@@ -788,7 +788,7 @@ const GalleryTitle = styled.h3`
   margin: 0;
   font-size: 1.1rem;
   color: ${props => {
-    if (props.isExpanded || props.isActive) {
+    if (props.$isExpanded || props.$isActive) {
       return 'white';
     }
     return props.darkMode ? '#e2e8f0' : '#2d3748';
@@ -800,7 +800,7 @@ const GalleryTitle = styled.h3`
   gap: 8px;
   
   /* 확장되거나 활성화된 상태에서는 항상 흰색 */
-  ${props => (props.isExpanded || props.isActive) && `
+  ${props => (props.$isExpanded || props.$isActive) && `
     color: white !important;
   `}
 `;
@@ -811,7 +811,7 @@ const GalleryToggle = styled.button`
   font-size: 1.2rem;
   cursor: pointer;
   color: ${props => {
-    if (props.isExpanded || props.isActive) {
+    if (props.$isExpanded || props.$isActive) {
       return 'white';
     }
     return props.darkMode ? '#a0aec0' : '#4a5568';
@@ -820,7 +820,7 @@ const GalleryToggle = styled.button`
   
   &:hover {
     color: ${props => {
-      if (props.isExpanded || props.isActive) {
+      if (props.$isExpanded || props.$isActive) {
         return 'white';
       }
       return props.darkMode ? '#e2e8f0' : '#2d3748';
@@ -828,7 +828,7 @@ const GalleryToggle = styled.button`
   }
   
   /* 확장되거나 활성화된 상태에서는 항상 흰색 */
-  ${props => (props.isExpanded || props.isActive) && `
+  ${props => (props.$isExpanded || props.$isActive) && `
     color: white !important;
     
     &:hover {
@@ -839,8 +839,8 @@ const GalleryToggle = styled.button`
 
 const GalleryContent = styled.div`
   padding: 24px;
-  display: ${props => props.collapsed ? 'none' : 'block'};
-  animation: ${props => props.collapsed ? 'none' : 'slideDown 0.2s ease-out'};
+  display: ${props => props.$collapsed ? 'none' : 'block'};
+  animation: ${props => props.$collapsed ? 'none' : 'slideDown 0.2s ease-out'};
   
   @keyframes slideDown {
     from {
@@ -1181,7 +1181,7 @@ const SubMenuItem = styled.div`
     background: ${props => props.darkMode ? '#4a5568' : '#f7fafc'};
   }
   
-  ${props => props.isProfile && `
+  ${props => props.$isProfile && `
     color: #38a169;
     font-weight: 600;
   `}
@@ -1221,11 +1221,12 @@ function CatGallery({
   onRefresh, 
   savedGroups, 
   onShowGlobalMessage,
-  darkMode = false 
+  darkMode = false,
+  activeTab = 'upload'
 }) {
   const [selectedCats, setSelectedCats] = useState(new Set());
   const [catNames, setCatNames] = useState({});
-  const [statusMessage, setStatusMessage] = useState('');
+  const [statusMessage, setStatusMessage] = useState(null);
   const [selectedGroup, setSelectedGroup] = useState('all');
   const [highlightedGroup, setHighlightedGroup] = useState('');
   const [bulkNameInput, setBulkNameInput] = useState('');
@@ -1347,24 +1348,32 @@ function CatGallery({
   }, []);
 
   // 컴포넌트 마운트 시 백엔드 연결 테스트
+  // 백엔드 연결 테스트를 한 번만 실행하기 위한 ref
+  const hasTestedBackend = React.useRef(false);
+
   useEffect(() => {
-    const testBackendConnection = async () => {
-      try {
-        console.log('=== 백엔드 연결 테스트 ===');
-        const response = await fetch('http://localhost:5000/api/health');
-        const data = await response.json();
-        console.log('백엔드 연결 성공:', data);
-      } catch (error) {
-        console.error('백엔드 연결 실패:', error);
-        setStatusMessage({ 
-          type: 'error', 
-          text: '백엔드 서버에 연결할 수 없습니다. 서버가 실행 중인지 확인해주세요.' 
-        });
-      }
-    };
-    
-    testBackendConnection();
-  }, []);
+    // 갤러리 탭이 활성화되었고 아직 백엔드 테스트를 하지 않았을 때만 실행
+    if (activeTab === 'gallery' && !hasTestedBackend.current) {
+      hasTestedBackend.current = true;
+      
+      const testBackendConnection = async () => {
+        try {
+          console.log('=== 백엔드 연결 테스트 ===');
+          const response = await fetch('http://localhost:5000/api/health');
+          const data = await response.json();
+          console.log('백엔드 연결 성공:', data);
+        } catch (error) {
+          console.error('백엔드 연결 실패:', error);
+          setStatusMessage({ 
+            type: 'error', 
+            text: '백엔드 서버에 연결할 수 없습니다. 서버가 실행 중인지 확인해주세요.' 
+          });
+        }
+      };
+      
+      testBackendConnection();
+    }
+  }, [activeTab]);
 
   // 디버깅을 위한 로그
   useEffect(() => {
@@ -1411,7 +1420,7 @@ function CatGallery({
           onShowGlobalMessage(message, 'success');
         } else {
           setStatusMessage({ type: 'success', text: message });
-          setTimeout(() => setStatusMessage(''), 5000);
+          setTimeout(() => setStatusMessage(null), 5000);
         }
       }
     } catch (error) {
@@ -1421,7 +1430,7 @@ function CatGallery({
         onShowGlobalMessage(message, 'error');
       } else {
         setStatusMessage({ type: 'error', text: message });
-        setTimeout(() => setStatusMessage(''), 3000);
+        setTimeout(() => setStatusMessage(null), 3000);
       }
     } finally {
       setIsLoading(false);
@@ -1457,7 +1466,7 @@ function CatGallery({
           onShowGlobalMessage(message, 'info');
         } else {
           setStatusMessage({ type: 'info', text: message });
-          setTimeout(() => setStatusMessage(''), 3000);
+          setTimeout(() => setStatusMessage(null), 3000);
         }
         return;
       }
@@ -1524,7 +1533,7 @@ function CatGallery({
           onShowGlobalMessage(message, 'success');
         } else {
           setStatusMessage({ type: 'success', text: message });
-          setTimeout(() => setStatusMessage(''), 5000);
+          setTimeout(() => setStatusMessage(null), 5000);
         }
       } else {
         throw new Error(data.message || data.error || '저장 실패');
@@ -1537,7 +1546,7 @@ function CatGallery({
         onShowGlobalMessage(message, 'error');
       } else {
         setStatusMessage({ type: 'error', text: message });
-        setTimeout(() => setStatusMessage(''), 5000);
+        setTimeout(() => setStatusMessage(null), 5000);
       }
     } finally {
       setIsLoading(false);
@@ -1686,7 +1695,7 @@ function CatGallery({
       } else {
         setStatusMessage({ type: 'success', text: message });
         setTimeout(() => {
-          setStatusMessage('');
+          setStatusMessage(null);
         }, 3000);
       }
     }
@@ -1714,7 +1723,7 @@ function CatGallery({
       } else {
         setStatusMessage({ type: 'success', text: message });
         setTimeout(() => {
-          setStatusMessage('');
+          setStatusMessage(null);
         }, 3000);
       }
     }
@@ -1733,7 +1742,7 @@ function CatGallery({
         onShowGlobalMessage(message, 'info');
       } else {
         setStatusMessage({ type: 'info', text: message });
-        setTimeout(() => setStatusMessage(''), 2000);
+        setTimeout(() => setStatusMessage(null), 2000);
       }
       return;
     }
@@ -1760,7 +1769,7 @@ function CatGallery({
       onShowGlobalMessage(message, 'info');
     } else {
       setStatusMessage({ type: 'info', text: message });
-      setTimeout(() => setStatusMessage(''), 2000);
+      setTimeout(() => setStatusMessage(null), 2000);
     }
   };
 
@@ -1802,7 +1811,7 @@ function CatGallery({
     } else {
       setStatusMessage({ type: 'info', text: message });
       setTimeout(() => {
-        setStatusMessage('');
+        setStatusMessage(null);
       }, 2000);
     }
   };
@@ -1856,7 +1865,7 @@ function CatGallery({
     
     if (!onShowGlobalMessage) {
       setTimeout(() => {
-        setStatusMessage('');
+        setStatusMessage(null);
       }, 3000);
     }
   };
@@ -1872,7 +1881,7 @@ function CatGallery({
         onShowGlobalMessage(message, 'error');
       } else {
         setStatusMessage({ type: 'error', text: message });
-        setTimeout(() => setStatusMessage(''), 3000);
+        setTimeout(() => setStatusMessage(null), 3000);
       }
       return;
     }
@@ -1902,7 +1911,7 @@ function CatGallery({
         onShowGlobalMessage(message, 'error');
       } else {
         setStatusMessage({ type: 'error', text: message });
-        setTimeout(() => setStatusMessage(''), 5000);
+        setTimeout(() => setStatusMessage(null), 5000);
       }
       return;
     }
@@ -2065,7 +2074,7 @@ function CatGallery({
         onShowGlobalMessage(message, 'info');
       } else {
         setStatusMessage({ type: 'info', text: message });
-        setTimeout(() => setStatusMessage(''), 3000);
+        setTimeout(() => setStatusMessage(null), 3000);
       }
       return;
     }
@@ -2083,7 +2092,7 @@ function CatGallery({
       onShowGlobalMessage(message, 'success');
     } else {
       setStatusMessage({ type: 'success', text: message });
-      setTimeout(() => setStatusMessage(''), 3000);
+      setTimeout(() => setStatusMessage(null), 3000);
     }
   };
 
@@ -2113,7 +2122,7 @@ function CatGallery({
         onShowGlobalMessage(message, 'success');
       } else {
         setStatusMessage({ type: 'success', text: message });
-        setTimeout(() => setStatusMessage(''), 3000);
+        setTimeout(() => setStatusMessage(null), 3000);
       }
       
       setShowProfileModal(false);
@@ -2130,7 +2139,7 @@ function CatGallery({
       onShowGlobalMessage(message, 'info');
     } else {
       setStatusMessage({ type: 'info', text: message });
-      setTimeout(() => setStatusMessage(''), 3000);
+      setTimeout(() => setStatusMessage(null), 3000);
     }
     
     setShowProfileModal(false);
@@ -2214,7 +2223,7 @@ function CatGallery({
             onShowGlobalMessage(message, 'warning');
           } else {
             setStatusMessage({ type: 'warning', text: message });
-            setTimeout(() => setStatusMessage(''), 3000);
+            setTimeout(() => setStatusMessage(null), 3000);
           }
         }
         break;
@@ -2234,7 +2243,7 @@ function CatGallery({
             onShowGlobalMessage(message, 'info');
           } else {
             setStatusMessage({ type: 'info', text: message });
-            setTimeout(() => setStatusMessage(''), 3000);
+            setTimeout(() => setStatusMessage(null), 3000);
           }
         }
         break;
@@ -2250,7 +2259,7 @@ function CatGallery({
             onShowGlobalMessage(message, 'info');
           } else {
             setStatusMessage({ type: 'info', text: message });
-            setTimeout(() => setStatusMessage(''), 3000);
+            setTimeout(() => setStatusMessage(null), 3000);
           }
         }
         break;
@@ -2265,7 +2274,7 @@ function CatGallery({
             onShowGlobalMessage(message, 'info');
           } else {
             setStatusMessage({ type: 'info', text: message });
-            setTimeout(() => setStatusMessage(''), 3000);
+            setTimeout(() => setStatusMessage(null), 3000);
           }
         }
         break;
@@ -2281,7 +2290,7 @@ function CatGallery({
               onShowGlobalMessage(message, 'success');
             } else {
               setStatusMessage({ type: 'success', text: message });
-              setTimeout(() => setStatusMessage(''), 2000);
+              setTimeout(() => setStatusMessage(null), 2000);
             }
           }
         }
@@ -2314,7 +2323,7 @@ function CatGallery({
         onShowGlobalMessage(message, 'success');
       } else {
         setStatusMessage({ type: 'success', text: message });
-        setTimeout(() => setStatusMessage(''), 3000);
+        setTimeout(() => setStatusMessage(null), 3000);
       }
       
       hideContextMenu();
@@ -2336,7 +2345,7 @@ function CatGallery({
           onShowGlobalMessage(message, 'success');
         } else {
           setStatusMessage({ type: 'success', text: message });
-          setTimeout(() => setStatusMessage(''), 3000);
+          setTimeout(() => setStatusMessage(null), 3000);
         }
         
         hideContextMenu();
@@ -2347,7 +2356,7 @@ function CatGallery({
         onShowGlobalMessage(message, 'warning');
       } else {
         setStatusMessage({ type: 'warning', text: message });
-        setTimeout(() => setStatusMessage(''), 3000);
+        setTimeout(() => setStatusMessage(null), 3000);
       }
     }
   };
@@ -2472,12 +2481,12 @@ function CatGallery({
             <GroupButton
               key={groupKey}
               selected={selectedGroup === groupKey}
-              isActive={selectedGroup === groupKey && !isGalleryCollapsed}
+              $isActive={selectedGroup === groupKey && !isGalleryCollapsed}
               onClick={() => handleGroupSelect(groupKey)}
               onDoubleClick={() => handleSelectGroup(groupKey)}
               onMouseEnter={() => handleGroupHighlight(groupKey)}
-              borderColor={groupKey === 'unnamed' || groupKey === 'all' ? '#e2e8f0' : generateBorderColor(group.name || groupKey)}
-              backgroundColor={groupKey === 'unnamed' || groupKey === 'all' ? '#ffffff' : generateBackgroundColor(group.name || groupKey)}
+              $borderColor={groupKey === 'unnamed' || groupKey === 'all' ? '#e2e8f0' : generateBorderColor(group.name || groupKey)}
+              $backgroundColor={groupKey === 'unnamed' || groupKey === 'all' ? '#ffffff' : generateBackgroundColor(group.name || groupKey)}
               title={`${group.name} 그룹의 ${group.count}마리 고양이 보기${selectedGroup === groupKey ? ' (다시 클릭하면 갤러리 토글)' : ''}`}
             >
               {/* 프로필 이미지 표시 */}
@@ -2563,7 +2572,7 @@ function CatGallery({
         </GroupSelector>
       </FilterSection>
 
-              <BulkActionSection show={selectedCats.size > 0} darkMode={darkMode}>
+              <BulkActionSection $show={selectedCats.size > 0} darkMode={darkMode}>
                   <BulkActionTitle darkMode={darkMode}>🐱 선택한 이미지의 고양이 이름은 무엇인가요? ({selectedCats.size}개 이미지)</BulkActionTitle>
           <BulkActionDescription darkMode={darkMode}>
             선택한 고양이 이미지들을 보고 같은 고양이라고 판단되면 이름을 지어주세요.
@@ -2647,7 +2656,7 @@ function CatGallery({
         </Button>
       </Controls>
 
-      {statusMessage && !onShowGlobalMessage && (
+      {statusMessage && typeof statusMessage === 'object' && statusMessage.text && !onShowGlobalMessage && (
         <StatusMessage className={statusMessage.type}>
           {statusMessage.text}
         </StatusMessage>
@@ -2655,19 +2664,19 @@ function CatGallery({
 
               <GallerySection 
                 darkMode={darkMode} 
-                isExpanded={!isGalleryCollapsed}
-                highlighted={isGalleryHighlighted}
+                $isExpanded={!isGalleryCollapsed}
+                $highlighted={isGalleryHighlighted}
               >
         <GalleryHeader 
           onClick={() => setIsGalleryCollapsed(!isGalleryCollapsed)} 
           darkMode={darkMode}
-          isExpanded={!isGalleryCollapsed}
-          isActive={selectedGroup !== 'all' && !isGalleryCollapsed}
+          $isExpanded={!isGalleryCollapsed}
+          $isActive={selectedGroup !== 'all' && !isGalleryCollapsed}
         >
           <GalleryTitle 
             darkMode={darkMode} 
-            isExpanded={!isGalleryCollapsed}
-            isActive={selectedGroup !== 'all' && !isGalleryCollapsed}
+            $isExpanded={!isGalleryCollapsed}
+            $isActive={selectedGroup !== 'all' && !isGalleryCollapsed}
           >
             🖼️ 고양이 이미지 갤러리 ({filteredCats.length}마리)
             {selectedGroup !== 'all' && (
@@ -2699,14 +2708,14 @@ function CatGallery({
           </GalleryTitle>
           <GalleryToggle 
             darkMode={darkMode} 
-            isExpanded={!isGalleryCollapsed}
-            isActive={selectedGroup !== 'all' && !isGalleryCollapsed}
+            $isExpanded={!isGalleryCollapsed}
+            $isActive={selectedGroup !== 'all' && !isGalleryCollapsed}
           >
             {isGalleryCollapsed ? '▼' : '▲'}
           </GalleryToggle>
         </GalleryHeader>
         
-        <GalleryContent collapsed={isGalleryCollapsed}>
+        <GalleryContent $collapsed={isGalleryCollapsed}>
           {filteredCats.length === 0 ? (
             <div style={{ 
               textAlign: 'center', 
@@ -2734,8 +2743,8 @@ function CatGallery({
                   <CatCard
                     key={cat.id}
                     selected={selectedCats.has(cat.id)}
-                    highlighted={highlightedGroup && catNames[cat.id] === highlightedGroup}
-                    isProfile={isProfile}
+                    $highlighted={highlightedGroup && catNames[cat.id] === highlightedGroup}
+                    $isProfile={isProfile}
                     onClick={() => handleCatSelect(cat.id)}
                     onContextMenu={(e) => handleContextMenu(e, cat.id, catNames[cat.id])}
                     onMouseDown={(e) => e.preventDefault()} // 드래그 방지
@@ -2816,8 +2825,8 @@ function CatGallery({
                     }}
                   >
                     <CatTitle
-                      groupColor={catNames[cat.id] ? generateBackgroundColor(catNames[cat.id]) : 'rgba(156, 163, 175, 0.1)'}
-                      groupBorderColor={catNames[cat.id] ? generateBorderColor(catNames[cat.id]) : 'rgba(156, 163, 175, 0.8)'}
+                      $groupColor={catNames[cat.id] ? generateBackgroundColor(catNames[cat.id]) : 'rgba(156, 163, 175, 0.1)'}
+                      $groupBorderColor={catNames[cat.id] ? generateBorderColor(catNames[cat.id]) : 'rgba(156, 163, 175, 0.8)'}
                       darkMode={darkMode}
                     >
                       {catNames[cat.id] || '미지정'}
@@ -3086,7 +3095,7 @@ function CatGallery({
                     key={groupKey}
                     onClick={() => handleAddToSpecificGroup(groupKey)}
                     darkMode={darkMode}
-                    isProfile={catProfiles[groupKey] === contextMenu.catId}
+                    $isProfile={catProfiles[groupKey] === contextMenu.catId}
                   >
                     {catGroups[groupKey].name}
                     {catProfiles[groupKey] && (

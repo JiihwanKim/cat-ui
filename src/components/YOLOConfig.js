@@ -353,7 +353,7 @@ const YOLOConfig = () => {
   });
   
   const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState('');
+  const [message, setMessage] = useState(null);
   const [modelStatus, setModelStatus] = useState(null);
   const [downloading, setDownloading] = useState(false);
 
@@ -400,11 +400,11 @@ const YOLOConfig = () => {
       const data = await response.json();
       if (data.success) {
         setConfig(data.updatedConfig);
-        setMessage('설정이 업데이트되었습니다.');
-        setTimeout(() => setMessage(''), 3000);
+        setMessage({ text: '설정이 업데이트되었습니다.', type: 'success' });
+        setTimeout(() => setMessage(null), 3000);
       }
     } catch (error) {
-      setMessage('설정 업데이트 실패');
+      setMessage({ text: '설정 업데이트 실패', type: 'error' });
       console.error('설정 업데이트 실패:', error);
     } finally {
       setLoading(false);
@@ -421,11 +421,11 @@ const YOLOConfig = () => {
       const data = await response.json();
       if (data.success) {
         setConfig(data.config);
-        setMessage('설정이 기본값으로 초기화되었습니다.');
-        setTimeout(() => setMessage(''), 3000);
+        setMessage({ text: '설정이 기본값으로 초기화되었습니다.', type: 'success' });
+        setTimeout(() => setMessage(null), 3000);
       }
     } catch (error) {
-      setMessage('설정 초기화 실패');
+      setMessage({ text: '설정 초기화 실패', type: 'error' });
       console.error('설정 초기화 실패:', error);
     } finally {
       setLoading(false);
@@ -441,12 +441,12 @@ const YOLOConfig = () => {
       
       const data = await response.json();
       if (data.success) {
-        setMessage('모델이 재로드되었습니다.');
-        setTimeout(() => setMessage(''), 3000);
+        setMessage({ text: '모델이 재로드되었습니다.', type: 'success' });
+        setTimeout(() => setMessage(null), 3000);
         fetchModelStatus(); // 상태 새로고침
       }
     } catch (error) {
-      setMessage('모델 재로드 실패');
+      setMessage({ text: '모델 재로드 실패', type: 'error' });
       console.error('모델 재로드 실패:', error);
     } finally {
       setLoading(false);
@@ -466,12 +466,12 @@ const YOLOConfig = () => {
       
       const data = await response.json();
       if (data.success) {
-        setMessage(`${modelName} 모델이 성공적으로 다운로드되었습니다.`);
-        setTimeout(() => setMessage(''), 3000);
+        setMessage({ text: `${modelName} 모델이 성공적으로 다운로드되었습니다.`, type: 'success' });
+        setTimeout(() => setMessage(null), 3000);
         fetchModelStatus(); // 상태 새로고침
       }
     } catch (error) {
-      setMessage('모델 다운로드 실패');
+      setMessage({ text: '모델 다운로드 실패', type: 'error' });
       console.error('모델 다운로드 실패:', error);
     } finally {
       setDownloading(false);
@@ -514,9 +514,9 @@ const YOLOConfig = () => {
     <ConfigContainer>
       <Title>🐱 YOLO 설정</Title>
       
-      {message && (
-        <Message className={message.includes('실패') ? 'error' : 'success'}>
-          {message}
+      {message && typeof message === 'object' && message.text && (
+        <Message className={message.type}>
+          {message.text}
         </Message>
       )}
 
