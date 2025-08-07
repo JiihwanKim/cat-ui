@@ -552,6 +552,98 @@ const EmptyText = styled.p`
   font-weight: 500;
 `;
 
+// 상태 표시줄 컴포넌트
+const StatusBar = styled.div`
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  background: ${props => props.darkMode ? '#2d3748' : '#ffffff'};
+  border: 2px solid ${props => props.type === 'success' ? '#38a169' : props.type === 'error' ? '#e53e3e' : '#3182ce'};
+  border-radius: 12px;
+  padding: 16px 20px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+  z-index: 2000;
+  min-width: 300px;
+  max-width: 400px;
+  animation: slideInRight 0.3s ease-out;
+  
+  @keyframes slideInRight {
+    from {
+      transform: translateX(100%);
+      opacity: 0;
+    }
+    to {
+      transform: translateX(0);
+      opacity: 1;
+    }
+  }
+`;
+
+const StatusHeader = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+`;
+
+const StatusIcon = styled.div`
+  font-size: 1.2rem;
+  color: ${props => props.type === 'success' ? '#38a169' : props.type === 'error' ? '#e53e3e' : '#3182ce'};
+`;
+
+const StatusTitle = styled.h4`
+  margin: 0;
+  color: ${props => props.darkMode ? '#e2e8f0' : '#2d3748'};
+  font-size: 1rem;
+  font-weight: 600;
+  transition: color 0.3s ease;
+`;
+
+const StatusMessage = styled.div`
+  color: ${props => props.darkMode ? '#a0aec0' : '#4a5568'};
+  font-size: 0.9rem;
+  line-height: 1.4;
+  margin-bottom: 12px;
+  transition: color 0.3s ease;
+`;
+
+const StatusProgress = styled.div`
+  width: 100%;
+  height: 6px;
+  background: ${props => props.darkMode ? '#4a5568' : '#e2e8f0'};
+  border-radius: 3px;
+  overflow: hidden;
+  margin-bottom: 8px;
+  transition: background 0.3s ease;
+`;
+
+const StatusProgressBar = styled.div`
+  height: 100%;
+  background: linear-gradient(135deg, #667eea 0%, #4facfe 100%);
+  border-radius: 3px;
+  width: ${props => props.progress}%;
+  transition: width 0.3s ease;
+`;
+
+const StatusCloseButton = styled.button`
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: none;
+  border: none;
+  color: ${props => props.darkMode ? '#a0aec0' : '#718096'};
+  font-size: 1.2rem;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+  
+  &:hover {
+    background: ${props => props.darkMode ? '#4a5568' : '#f7fafc'};
+    color: ${props => props.darkMode ? '#e2e8f0' : '#2d3748'};
+  }
+`;
+
 const TeachingOverlay = styled.div`
   position: fixed;
   top: 0;
@@ -1164,6 +1256,16 @@ function CatGallery({
     y: 0,
     catId: null,
     catName: null
+  });
+
+  // 상태 표시줄 관련 상태 추가
+  const [statusBar, setStatusBar] = useState({
+    show: false,
+    type: 'info', // 'info', 'success', 'error'
+    title: '',
+    message: '',
+    progress: 0,
+    checkpointInfo: null
   });
 
   // 동적 색상 생성 함수들
@@ -1806,8 +1908,15 @@ function CatGallery({
     }
 
     try {
-      setIsTeaching(true);
-      setTeachingStep('데이터 준비 중...');
+      // 상태 표시줄 표시
+      setStatusBar({
+        show: true,
+        type: 'info',
+        title: '🧠 모델 학습 시작',
+        message: '데이터 준비 중...',
+        progress: 0,
+        checkpointInfo: null
+      });
       
       // 학습 데이터 준비 - 이름이 지정된 고양이들만
       const namedCatIds = croppedCats
@@ -1819,15 +1928,15 @@ function CatGallery({
         cat_names: catNames
       };
       
-      console.log('=== 모델 학습 시작 ===');
+      console.log('=== 실제 모델 학습 시작 ===');
       console.log('학습 데이터:', teachingData);
       
-      // 단계별 상태 업데이트
-      setTimeout(() => setTeachingStep('고양이 이미지 분석 중...'), 500);
-      setTimeout(() => setTeachingStep('특성 추출 중...'), 2000);
-      setTimeout(() => setTeachingStep('패턴 학습 중...'), 4000);
-      setTimeout(() => setTeachingStep('모델 업데이트 중...'), 6000);
-      setTimeout(() => setTeachingStep('검증 중...'), 8000);
+      // 진행 상황 업데이트
+      setStatusBar(prev => ({
+        ...prev,
+        message: '고양이 이미지 분석 중...',
+        progress: 20
+      }));
       
       const response = await fetch('http://localhost:5000/api/yolo/teach-model', {
         method: 'POST',
@@ -1840,54 +1949,81 @@ function CatGallery({
       const data = await response.json();
       
       if (data.success) {
-        setTeachingStep('학습 완료!');
-        const message = data.message;
-        if (onShowGlobalMessage) {
-          onShowGlobalMessage(message, 'success');
-        } else {
-          setStatusMessage({ type: 'success', text: message });
-        }
+        setStatusBar(prev => ({
+          ...prev,
+          type: 'success',
+          title: '✅ 학습 완료',
+          message: data.message,
+          progress: 100,
+          checkpointInfo: data.checkpoint_info
+        }));
         
-        // 학습 결과 표시
-        if (data.learning_results) {
-          const results = data.learning_results;
-          console.log('학습 결과:', results);
-          
+        // 체크포인트 다운로드 정보가 있으면 다운로드 시작
+        if (data.checkpoint_info && data.checkpoint_info.success) {
           setTimeout(() => {
-            const uniqueGroups = new Set(Object.values(catNames).filter(name => name && name.trim())).size;
-            const resultMessage = `${uniqueGroups}개 그룹의 고양이로 학습 완료! 정확도: ${(results.learning_accuracy * 100).toFixed(1)}%, 개선률: ${(results.improvement_rate * 100).toFixed(1)}%`;
-            if (onShowGlobalMessage) {
-              onShowGlobalMessage(resultMessage, 'success');
-            } else {
-              setStatusMessage({ type: 'success', text: resultMessage });
-            }
+            downloadCheckpoint(data.checkpoint_info);
           }, 2000);
         }
       } else {
-        setTeachingStep('학습 실패');
-        const message = data.message || '모델 학습에 실패했습니다.';
-        if (onShowGlobalMessage) {
-          onShowGlobalMessage(message, 'error');
-        } else {
-          setStatusMessage({ type: 'error', text: message });
-        }
+        setStatusBar(prev => ({
+          ...prev,
+          type: 'error',
+          title: '❌ 학습 실패',
+          message: data.message || '모델 학습에 실패했습니다.',
+          progress: 0
+        }));
       }
     } catch (error) {
       console.error('모델 학습 실패:', error);
-      setTeachingStep('오류 발생');
-      const message = '모델 학습 중 오류가 발생했습니다.';
-      if (onShowGlobalMessage) {
-        onShowGlobalMessage(message, 'error');
+      setStatusBar(prev => ({
+        ...prev,
+        type: 'error',
+        title: '❌ 오류 발생',
+        message: '모델 학습 중 오류가 발생했습니다.',
+        progress: 0
+      }));
+    }
+  };
+
+  // 체크포인트 다운로드 함수
+  const downloadCheckpoint = async (checkpointInfo) => {
+    try {
+      setStatusBar(prev => ({
+        ...prev,
+        message: '체크포인트 파일 다운로드 중...',
+        progress: 90
+      }));
+      
+      const response = await fetch(`http://localhost:5000${checkpointInfo.download_url}`);
+      
+      if (response.ok) {
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = checkpointInfo.checkpoint_file;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+        
+        setStatusBar(prev => ({
+          ...prev,
+          message: '체크포인트 파일 다운로드 완료!',
+          progress: 100
+        }));
       } else {
-        setStatusMessage({ type: 'error', text: message });
+        throw new Error('체크포인트 다운로드 실패');
       }
-    } finally {
-      // 3초 후 학습 모드 종료
-      setTimeout(() => {
-        setIsTeaching(false);
-        setTeachingStep('');
-        setStatusMessage('');
-      }, 3000);
+    } catch (error) {
+      console.error('체크포인트 다운로드 실패:', error);
+      setStatusBar(prev => ({
+        ...prev,
+        type: 'error',
+        title: '❌ 다운로드 실패',
+        message: '체크포인트 파일 다운로드에 실패했습니다.',
+        progress: 0
+      }));
     }
   };
 
@@ -2782,6 +2918,55 @@ function CatGallery({
             )}
           </ModalContent>
         </Modal>
+      )}
+
+      {/* 상태 표시줄 */}
+      {statusBar.show && (
+        <StatusBar 
+          darkMode={darkMode} 
+          type={statusBar.type}
+        >
+          <StatusCloseButton 
+            darkMode={darkMode}
+            onClick={() => setStatusBar(prev => ({ ...prev, show: false }))}
+          >
+            ×
+          </StatusCloseButton>
+          
+          <StatusHeader>
+            <StatusIcon type={statusBar.type}>
+              {statusBar.type === 'success' ? '✅' : 
+               statusBar.type === 'error' ? '❌' : '🔄'}
+            </StatusIcon>
+            <StatusTitle darkMode={darkMode}>
+              {statusBar.title}
+            </StatusTitle>
+          </StatusHeader>
+          
+          <StatusMessage darkMode={darkMode}>
+            {statusBar.message}
+          </StatusMessage>
+          
+          {statusBar.progress > 0 && (
+            <StatusProgress darkMode={darkMode}>
+              <StatusProgressBar 
+                progress={statusBar.progress}
+              />
+            </StatusProgress>
+          )}
+          
+          {statusBar.checkpointInfo && statusBar.checkpointInfo.success && (
+            <div style={{ 
+              fontSize: '0.8rem', 
+              color: darkMode ? '#a0aec0' : '#718096',
+              marginTop: '8px'
+            }}>
+              📁 체크포인트: {statusBar.checkpointInfo.checkpoint_file}
+              <br />
+              📏 크기: {(statusBar.checkpointInfo.file_size / 1024 / 1024).toFixed(1)} MB
+            </div>
+          )}
+        </StatusBar>
       )}
 
       {isTeaching && (

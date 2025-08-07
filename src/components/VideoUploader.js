@@ -340,25 +340,26 @@ const VideoUploader = ({ onVideoUpload, darkMode = false }) => {
             if (response.success) {
               setMessage({ text: '업로드가 완료되었습니다! 고양이를 감지하는 중...', type: 'success' });
               
-              // 고양이 감지 결과를 기다림
-              const detectionResponse = await fetch('http://localhost:5000/api/detect-cats', {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                  video_files: response.video_files
-                })
-              });
-
-              const detectionData = await detectionResponse.json();
+              // 업로드 응답에서 직접 고양이 데이터 추출
+              const totalCats = response.results.reduce((sum, result) => 
+                sum + result.processingResult.detectedCats.length, 0
+              );
+              const totalCropped = response.results.reduce((sum, result) => 
+                sum + result.processingResult.croppedCats.length, 0
+              );
               
-              if (detectionData.success) {
-                setMessage({ text: '고양이 감지가 완료되었습니다!', type: 'success' });
-                onVideoUpload(detectionData.cats, detectionData.summary);
-              } else {
-                setMessage({ text: detectionData.error || '고양이 감지 중 오류가 발생했습니다.', type: 'error' });
-              }
+              // 모든 고양이 데이터 수집
+              const allCats = [];
+              response.results.forEach(result => {
+                allCats.push(...result.processingResult.croppedCats);
+              });
+              
+              setMessage({ text: '업로드 및 고양이 감지가 완료되었습니다!', type: 'success' });
+              onVideoUpload(allCats, {
+                message: `${response.summary.totalVideos}개 영상에서 총 ${response.summary.totalCats}마리의 고양이가 감지되었습니다.`,
+                totalCats: response.summary.totalCats,
+                totalCropped: response.summary.totalCropped
+              });
             } else {
               setMessage({ text: response.error || '업로드 중 오류가 발생했습니다.', type: 'error' });
             }
@@ -378,7 +379,7 @@ const VideoUploader = ({ onVideoUpload, darkMode = false }) => {
         setProgress(0);
       });
 
-      xhr.open('POST', 'http://localhost:5000/api/upload-videos');
+      xhr.open('POST', 'http://localhost:5000/api/video/upload');
       xhr.send(formData);
 
     } catch (error) {

@@ -404,11 +404,29 @@ def save_cat_groups(groups_data: Dict[str, Any]):
         groups_file.parent.mkdir(exist_ok=True)
         print(f"디렉토리 생성 완료: {groups_file.parent}")
         
+        # groups와 profiles 데이터 추출
+        groups = groups_data.get("groups", {})
+        profiles = groups_data.get("profiles", {})
+        
+        # groups에 존재하는 그룹만 profiles에서 유지
+        valid_groups = set(groups.values())
+        filtered_profiles = {}
+        
+        for group_name, profile_filename in profiles.items():
+            if group_name in valid_groups:
+                filtered_profiles[group_name] = profile_filename
+                print(f"프로필 유지: {group_name} -> {profile_filename}")
+            else:
+                print(f"프로필 제거: {group_name} (groups에 존재하지 않음)")
+        
         # 새로운 형식으로 저장
         save_data = {
-            "groups": groups_data.get("groups", {}),
-            "profiles": groups_data.get("profiles", {})
+            "groups": groups,
+            "profiles": filtered_profiles
         }
+        
+        print(f"필터링된 프로필: {filtered_profiles}")
+        print(f"저장할 최종 데이터: {save_data}")
         
         with open(groups_file, 'w', encoding='utf-8') as f:
             json.dump(save_data, f, ensure_ascii=False, indent=2)
@@ -891,11 +909,204 @@ async def download_model(model_name: str = "yolo11n.pt"):
         print(f"모델 다운로드 중 오류: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+def prepare_training_data():
+    """cat_groups.json을 읽어서 학습용 데이터셋 구조 생성"""
+    try:
+        print("=== 학습 데이터 준비 시작 ===")
+        
+        # cat_groups.json 로드
+        groups_data = load_cat_groups()
+        groups = groups_data.get("groups", {})
+        
+        if not groups:
+            raise ValueError("학습할 그룹 데이터가 없습니다.")
+        
+        # 그룹별로 이미지 분류
+        group_images = {}
+        for cat_id, group_name in groups.items():
+            if group_name not in group_images:
+                group_images[group_name] = []
+            
+            # cropped-images 디렉토리에서 해당 이미지 찾기
+            image_path = cropped_images_dir / f"{cat_id}.jpg"
+            if image_path.exists():
+                group_images[group_name].append(str(image_path))
+        
+        # 각 그룹별 이미지 수 확인
+        print(f"그룹별 이미지 수:")
+        for group_name, images in group_images.items():
+            print(f"  {group_name}: {len(images)}개")
+        
+        # 최소 3개 이상의 이미지가 있는 그룹만 사용
+        valid_groups = {name: images for name, images in group_images.items() if len(images) >= 3}
+        
+        if not valid_groups:
+            raise ValueError("학습 가능한 그룹이 없습니다. 각 그룹당 최소 3개 이상의 이미지가 필요합니다.")
+        
+        # datasets 디렉토리 생성
+        datasets_dir = BASE_DIR / "datasets"
+        datasets_dir.mkdir(exist_ok=True)
+        
+        # 각 그룹별로 디렉토리 생성 및 이미지 복사
+        for i, (group_name, images) in enumerate(valid_groups.items()):
+            group_dir = datasets_dir / str(i + 1)  # 1부터 시작하는 클래스 번호
+            group_dir.mkdir(exist_ok=True)
+            
+            for j, image_path in enumerate(images):
+                # 이미지 파일명을 간단하게 변경
+                new_filename = f"{group_name}_{j+1}.jpg"
+                new_path = group_dir / new_filename
+                
+                # 이미지 복사
+                import shutil
+                shutil.copy2(image_path, new_path)
+                print(f"복사됨: {image_path} -> {new_path}")
+        
+        print(f"=== 학습 데이터 준비 완료 ===")
+        print(f"유효한 그룹 수: {len(valid_groups)}")
+        print(f"총 이미지 수: {sum(len(images) for images in valid_groups.values())}")
+        
+        return {
+            "success": True,
+            "num_groups": len(valid_groups),
+            "total_images": sum(len(images) for images in valid_groups.values()),
+            "group_info": {name: len(images) for name, images in valid_groups.items()}
+        }
+        
+    except Exception as e:
+        print(f"학습 데이터 준비 중 오류: {e}")
+        raise e
+
+@app.post("/api/yolo/prepare-training-data")
+async def prepare_training_data_api():
+    """학습용 데이터셋 준비"""
+    try:
+        result = prepare_training_data()
+        return result
+    except Exception as e:
+        return {
+            "success": False,
+            "error": str(e),
+            "message": "학습 데이터 준비에 실패했습니다."
+        }
+
+@app.post("/api/yolo/train-model")
+async def train_model():
+    """실제 ResNet50 모델 학습 수행"""
+    try:
+        print("=== 실제 모델 학습 시작 ===")
+        
+        # 1. 학습 데이터 준비
+        print("1. 학습 데이터 준비 중...")
+        data_result = prepare_training_data()
+        if not data_result["success"]:
+            return data_result
+        
+        # 2. train_resnet50.py 실행
+        print("2. ResNet50 모델 학습 시작...")
+        import subprocess
+        import sys
+        
+        # train_resnet50.py 실행
+        train_script = BASE_DIR / "train_resnet50.py"
+        if not train_script.exists():
+            return {
+                "success": False,
+                "error": "train_resnet50.py 파일을 찾을 수 없습니다.",
+                "message": "학습 스크립트가 존재하지 않습니다."
+            }
+        
+        # Python 스크립트 실행
+        result = subprocess.run([
+            sys.executable, str(train_script)
+        ], capture_output=True, text=True, cwd=str(BASE_DIR))
+        
+        if result.returncode != 0:
+            print(f"학습 스크립트 실행 실패:")
+            print(f"stdout: {result.stdout}")
+            print(f"stderr: {result.stderr}")
+            return {
+                "success": False,
+                "error": f"학습 스크립트 실행 실패: {result.stderr}",
+                "message": "모델 학습 중 오류가 발생했습니다."
+            }
+        
+        print("=== 모델 학습 완료 ===")
+        print(f"학습 출력: {result.stdout}")
+        
+        return {
+            "success": True,
+            "message": "ResNet50 모델 학습이 완료되었습니다.",
+            "training_output": result.stdout
+        }
+        
+    except Exception as e:
+        print(f"모델 학습 중 오류: {e}")
+        return {
+            "success": False,
+            "error": str(e),
+            "message": "모델 학습 중 오류가 발생했습니다."
+        }
+
+@app.get("/api/yolo/download-checkpoint")
+async def download_checkpoint():
+    """학습 완료된 체크포인트 파일 다운로드"""
+    try:
+        # 체크포인트 파일 경로
+        checkpoint_path = BASE_DIR / "output" / "best_model_resnet50_contrastive.pth"
+        
+        if not checkpoint_path.exists():
+            return {
+                "success": False,
+                "error": "체크포인트 파일을 찾을 수 없습니다.",
+                "message": "학습이 완료되지 않았거나 체크포인트 파일이 생성되지 않았습니다."
+            }
+        
+        # 파일 정보
+        file_size = checkpoint_path.stat().st_size
+        file_name = checkpoint_path.name
+        
+        return {
+            "success": True,
+            "checkpoint_file": file_name,
+            "file_size": file_size,
+            "download_url": f"/api/yolo/download-checkpoint-file/{file_name}",
+            "message": "체크포인트 파일 다운로드 준비 완료"
+        }
+        
+    except Exception as e:
+        print(f"체크포인트 다운로드 준비 중 오류: {e}")
+        return {
+            "success": False,
+            "error": str(e),
+            "message": "체크포인트 다운로드 준비에 실패했습니다."
+        }
+
+@app.get("/api/yolo/download-checkpoint-file/{filename}")
+async def download_checkpoint_file(filename: str):
+    """체크포인트 파일 다운로드"""
+    try:
+        file_path = BASE_DIR / "output" / filename
+        
+        if not file_path.exists():
+            raise HTTPException(status_code=404, detail="파일을 찾을 수 없습니다.")
+        
+        from fastapi.responses import FileResponse
+        return FileResponse(
+            path=str(file_path),
+            filename=filename,
+            media_type='application/octet-stream'
+        )
+        
+    except Exception as e:
+        print(f"체크포인트 파일 다운로드 중 오류: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 @app.post("/api/yolo/teach-model")
 async def teach_model(teaching_data: Dict[str, Any]):
-    """AI 모델에게 고양이를 알려주기 (학습)"""
+    """AI 모델에게 고양이를 알려주기 (실제 학습)"""
     try:
-        print("=== 모델 학습 시작 ===")
+        print("=== 실제 모델 학습 시작 ===")
         print(f"학습 데이터: {teaching_data}")
         
         # 선택된 고양이 ID들
@@ -911,39 +1122,20 @@ async def teach_model(teaching_data: Dict[str, Any]):
                 "message": "모든 고양이가 미지정 상태입니다."
             }
         
-        # 실제 학습 로직 (시뮬레이션)
-        # 여기서는 실제 모델 학습 대신 시뮬레이션을 수행
-        import time
-        import random
+        # 실제 학습 수행
+        train_result = await train_model()
         
-        # 학습 단계들
-        learning_steps = [
-            "고양이 이미지 분석 중...",
-            "특성 추출 중...",
-            "패턴 학습 중...",
-            "모델 업데이트 중...",
-            "검증 중..."
-        ]
+        if not train_result["success"]:
+            return train_result
         
-        # 각 단계별로 시간 지연
-        for i, step in enumerate(learning_steps):
-            print(f"학습 단계 {i+1}: {step}")
-            time.sleep(2)  # 실제로는 각 단계별로 더 복잡한 처리가 필요
-        
-        # 학습 결과 생성
-        learning_results = {
-            "total_cats_processed": len(selected_cat_ids),
-            "unique_names": len(set(cat_names.values())),
-            "learning_accuracy": random.uniform(0.85, 0.95),
-            "improvement_rate": random.uniform(0.1, 0.3)
-        }
-        
-        print(f"학습 완료: {learning_results}")
+        # 체크포인트 다운로드 정보 추가
+        checkpoint_info = await download_checkpoint()
         
         return {
             "success": True,
             "message": f"{len(set(cat_names.values()))}개 그룹의 {len(selected_cat_ids)}마리 고양이로 모델을 학습시켰습니다.",
-            "learning_results": learning_results
+            "training_result": train_result,
+            "checkpoint_info": checkpoint_info
         }
         
     except Exception as e:
