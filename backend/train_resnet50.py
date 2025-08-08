@@ -1,3 +1,10 @@
+# 데모 모드 설정 (파일 맨 앞에 추가)
+DEMO_MODE = False  # True: 데모 모드, False: 실제 학습 모드
+
+# matplotlib 백엔드 설정 (GUI 오류 방지)
+import matplotlib
+matplotlib.use('Agg')  # GUI 백엔드 대신 Agg 백엔드 사용
+
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -128,7 +135,7 @@ class Config:
         # 기본 설정 - 과적합 방지를 위한 수정
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         self.num_classes = 3
-        self.batch_size = 32  
+        self.batch_size = 128  
         self.num_epochs = 20  # 에포크 감소
         self.learning_rate = 1e-4  # 학습률을 1e-4로 수정
         self.weight_decay = 1e-4  # Weight decay를 1e-4로 수정
@@ -140,12 +147,19 @@ class Config:
         self.image_size = 192  # 이미지 크기를 192로 수정
         
         # Validation 설정
-        self.val_batch_size = 32
+        self.val_batch_size = 128
         self.val_samples_per_class = 200
         
         # 경로 설정
         self.base_dir = os.path.dirname(os.path.abspath(__file__))
-        self.dataset_dir = os.path.join(self.base_dir, 'datasets')
+        
+        # 데모 모드에 따른 데이터셋 경로 설정
+        if DEMO_MODE:
+            self.dataset_dir = os.path.join(self.base_dir, 'datasets_fix')
+            console.print(f"[yellow]⚠[/yellow] 데모 모드 활성화 - 데이터셋 경로: {self.dataset_dir}")
+        else:
+            self.dataset_dir = os.path.join(self.base_dir, 'datasets')
+            console.print(f"[blue]ℹ[/blue] 실제 학습 모드 - 데이터셋 경로: {self.dataset_dir}")
         
         # 체크포인트를 백엔드 디렉토리에 저장
         self.save_dir = os.path.join(self.base_dir, 'checkpoints')
@@ -337,13 +351,16 @@ def create_data_loaders(config, train_samples_per_class=50):  # 50으로 제한
     
     # 데이터 로더 생성 (속도 최적화)
     loader_start = time.time()
+
+    pin = (config.device.type == 'cuda')  # CUDA이면 고정 메모리 활성화
+
     train_loader = DataLoader(
         train_dataset, 
         batch_size=config.batch_size, 
         shuffle=True, 
-        num_workers=0,  # Windows에서 더 안정적
-        pin_memory=False,  # CPU 사용시 비활성화
-        persistent_workers=False,  # num_workers=0이므로 비활성화
+        num_workers=0,                  # Windows에서 안정성 위해 유지
+        pin_memory=pin,                 # ← 변경: CUDA일 때 True
+        persistent_workers=False,       # num_workers=0이므로 False
         drop_last=False
     )
     
@@ -351,9 +368,9 @@ def create_data_loaders(config, train_samples_per_class=50):  # 50으로 제한
         val_dataset, 
         batch_size=config.val_batch_size, # validation용 배치 크기 사용
         shuffle=False, 
-        num_workers=0,  # Windows에서 더 안정적
-        pin_memory=False,  # CPU 사용시 비활성화
-        persistent_workers=False,  # num_workers=0이므로 비활성화
+        num_workers=0,                  # Windows에서 안정성 위해 유지
+        pin_memory=pin,                 # ← 변경: CUDA일 때 True
+        persistent_workers=False,       # num_workers=0이므로 False
         drop_last=False
     )
     loader_end = time.time()
@@ -364,7 +381,7 @@ def create_data_loaders(config, train_samples_per_class=50):  # 50으로 제한
     
     return train_loader, val_loader, len(train_dataset), len(val_dataset)
 
-def train_epoch(model, train_loader, criterion, optimizer, config, epoch):
+def train_epoch(model, train_loader, criterion, optimizer, config, epoch, scaler=None):
     """한 에포크 학습 - Rich 적용"""
     model.train()
     
@@ -389,32 +406,36 @@ def train_epoch(model, train_loader, criterion, optimizer, config, epoch):
             images2 = images2.to(config.device, non_blocking=True)
             labels = labels.to(config.device, non_blocking=True)
             
-            # Forward pass for both augmentations
-            logits1, features1 = model(images1)
-            logits2, features2 = model(images2)
-            
-            # Contrastive learning을 위한 특징 결합
-            features = torch.stack([features1, features2], dim=1)  # [batch_size, 2, feature_dim]
-            
-            # Loss 계산
-            ce_loss = (criterion(logits1, labels) + criterion(logits2, labels)) / 2
-            
-            # Contrastive loss (NT-Xent) - arc_margin_loss 대신 nt_xent_loss 사용
-            contrastive_loss_val = nt_xent_loss(
-                features, labels, config.temperature
-            )
-            
-            # 전체 loss
-            total_loss = ce_loss + 0.1 * contrastive_loss_val
-            
-            # Backward pass
-            optimizer.zero_grad()
-            total_loss.backward()
-            
-            # Gradient clipping
-            torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
-            
-            optimizer.step()
+            # AMP autocast
+            with torch.cuda.amp.autocast(enabled=(config.device.type == 'cuda')):
+                # Forward pass for both augmentations
+                logits1, features1 = model(images1)
+                logits2, features2 = model(images2)
+
+                # Contrastive learning을 위한 특징 결합
+                features = torch.stack([features1, features2], dim=1)  # [batch_size, 2, feature_dim]
+                
+                # Loss 계산
+                ce_loss = (criterion(logits1, labels) + criterion(logits2, labels)) / 2
+                
+                # Contrastive loss (NT-Xent) - arc_margin_loss 대신 nt_xent_loss 사용
+                contrastive_loss_val = nt_xent_loss(
+                    features, labels, config.temperature
+                )
+                
+                # 전체 loss
+                total_loss = ce_loss + 0.1 * contrastive_loss_val
+
+            optimizer.zero_grad(set_to_none=True)
+            if scaler and scaler.is_enabled():
+                scaler.scale(total_loss).backward()
+                torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
+                scaler.step(optimizer)
+                scaler.update()
+            else:
+                total_loss.backward()
+                torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
+                optimizer.step()
             
             # 메트릭 업데이트
             prec1 = (accuracy(logits1, labels, topk=(1,))[0] + accuracy(logits2, labels, topk=(1,))[0]) / 2
@@ -427,10 +448,14 @@ def train_epoch(model, train_loader, criterion, optimizer, config, epoch):
             
             # Description 업데이트 - Arc를 Contrastive로 변경
             progress.update(task, description=f"Epoch {epoch+1} | Loss: {losses.avg:.4f} | Acc: {top1.avg:.2f}% | Contrastive: {contrastive_losses.avg:.4f}")
+            
+            # 메트릭 업데이트 후 진행률 기록
+            if ((batch_idx + 1) % 5 == 0 or (batch_idx + 1) == len(train_loader)):
+                pass # progress_writer 제거
     
     return losses.avg, top1.avg
 
-def validate(model, val_loader, criterion, config):
+def validate(model, val_loader, criterion, config, epoch=None):
     """검증 - Rich 적용"""
     model.eval()
     
@@ -455,7 +480,8 @@ def validate(model, val_loader, criterion, config):
                 labels = labels.to(config.device, non_blocking=True)
                 
                 # Forward pass
-                logits, _ = model(images)
+                with torch.cuda.amp.autocast(enabled=(config.device.type == 'cuda')):
+                    logits, _ = model(images)
                 
                 # Loss 계산
                 loss = criterion(logits, labels)
@@ -468,6 +494,10 @@ def validate(model, val_loader, criterion, config):
                 # Progress 업데이트
                 progress.update(task, advance=1)
                 progress.update(task, description=f"Validation | Loss: {losses.avg:.4f} | Acc: {top1.avg:.2f}%")
+                
+                # 진행률 기록
+                if ((batch_idx + 1) % 5 == 0 or (batch_idx + 1) == len(val_loader)):
+                    pass # progress_writer 제거
     
     return losses.avg, top1.avg
 
@@ -542,9 +572,8 @@ def extract_features(model, data_loader, config):
     
     return all_features, all_labels
 
-# 추가 import 수정 (UMAP 제거)
 from sklearn.decomposition import PCA
-# import umap.umap_ as umap  # UMAP 제거
+
 
 def visualize_tsne(features, labels, class_names, save_path):
     """t-SNE를 사용하여 특징점 시각화"""
@@ -594,7 +623,7 @@ def visualize_tsne(features, labels, class_names, save_path):
     # 저장
     plt.tight_layout()
     plt.savefig(save_path, dpi=300, bbox_inches='tight')
-    plt.show()
+    plt.close()  # plt.show() 대신 plt.close() 사용
     
     console.print(f"[green]✓[/green] t-SNE 시각화가 {save_path}에 저장되었습니다.")
 
@@ -639,7 +668,7 @@ def visualize_pca(features, labels, class_names, save_path):
     
     plt.tight_layout()
     plt.savefig(save_path, dpi=300, bbox_inches='tight')
-    plt.close()
+    plt.close()  # plt.show() 대신 plt.close() 사용
     
     console.print(f"[green]✓[/green] PCA visualization saved to: {save_path}")
 
@@ -693,7 +722,7 @@ def visualize_umap(features, labels, class_names, save_path):
         # 저장
         plt.tight_layout()
         plt.savefig(save_path, dpi=300, bbox_inches='tight')
-        plt.show()
+        plt.close()  # plt.show() 대신 plt.close() 사용
         
         console.print(f"[green]✓[/green] UMAP 시각화가 {save_path}에 저장되었습니다.")
         return save_path
@@ -761,6 +790,9 @@ def main():
     ))
     
     config = Config()
+
+    # 시작 상태 보고
+    # progress_writer({"status":"starting","phase":"init","epoch":0,"num_epochs":config.num_epochs}) # 제거
     
     # 데이터 로더 생성
     train_loader, val_loader, train_size, val_size = create_data_loaders(config, train_samples_per_class=200)
@@ -804,6 +836,15 @@ def main():
     scheduler = optim.lr_scheduler.CosineAnnealingLR(
         optimizer, T_max=config.num_epochs, eta_min=1e-6
     )
+
+    if config.device.type == 'cuda':
+        torch.backends.cudnn.benchmark = True
+        try:
+            torch.set_float32_matmul_precision('high')  # PyTorch 2.x 권장(가능한 경우)
+        except Exception:
+            pass
+
+    scaler = torch.cuda.amp.GradScaler(enabled=(config.device.type == 'cuda'))
     
     # 학습 루프
     best_acc = 0.0
@@ -837,12 +878,14 @@ def main():
             
             # 학습
             train_loss, train_acc = train_epoch(
-                model, train_loader, criterion, optimizer, config, epoch
+                model, train_loader, criterion, optimizer, config, epoch, scaler=scaler
             )
             
             # Validation 간격 조절
             if (epoch + 1) % validation_interval == 0 or epoch == 0:
-                val_loss, val_acc = validate(model, val_loader, criterion, config)
+                val_loss, val_acc = validate(
+                    model, val_loader, criterion, config, epoch=epoch
+                )
                 
                 # Learning rate 업데이트 - CosineAnnealingLR는 매 에포크마다 호출
                 old_lr = optimizer.param_groups[0]['lr']
@@ -897,6 +940,22 @@ def main():
             epoch_end_time = time.time()
             console.print(f"[dim]Epoch {epoch+1} completed in {epoch_end_time - epoch_start_time:.2f}s[/dim]")
 
+            # 에포크 요약 기록
+            # progress_writer({ # 제거
+            #     "status": "running",
+            #     "phase": "epoch_end",
+            #     "epoch": epoch + 1,
+            #     "num_epochs": config.num_epochs,
+            #     "train_loss": float(train_loss),
+            #     "train_acc": float(train_acc),
+            #     "val_loss": float(val_loss),
+            #     "val_acc": float(val_acc),
+            #     "best_acc": float(best_acc),
+            #     "lr": float(optimizer.param_groups[0]['lr'])
+            # })
+
+        # 완료 기록
+        # progress_writer({"status":"completed","phase":"done","best_acc": float(best_acc)}) # 제거
     
     # 학습 완료 메시지
     console.print(Panel.fit(

@@ -1,4 +1,4 @@
-from fastapi import FastAPI, File, UploadFile, HTTPException
+from fastapi import FastAPI, File, UploadFile, HTTPException, Body
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import JSONResponse
@@ -974,8 +974,8 @@ def prepare_training_data():
             group_dir.mkdir(exist_ok=True)
             
             for j, image_path in enumerate(images):
-                # 이미지 파일명을 간단하게 변경
-                new_filename = f"{group_name}_{j+1}.jpg"
+                # 원본 파일명을 그대로 사용
+                new_filename = Path(image_path).name
                 new_path = group_dir / new_filename
                 
                 # 이미지 복사
@@ -997,80 +997,6 @@ def prepare_training_data():
     except Exception as e:
         console.print(f"[red]✗[/red] 학습 데이터 준비 중 오류: {e}")
         raise e
-
-@app.post("/api/yolo/prepare-training-data")
-async def prepare_training_data_api():
-    """학습용 데이터셋 준비"""
-    try:
-        result = prepare_training_data()
-        return result
-    except Exception as e:
-        return {
-            "success": False,
-            "error": str(e),
-            "message": "학습 데이터 준비에 실패했습니다."
-        }
-
-@app.post("/api/yolo/train-model")
-async def train_model():
-    """실제 ResNet50 모델 학습 수행"""
-    try:
-        console.print("[blue]ℹ[/blue] === 실제 모델 학습 시작 ===")
-        
-        # 1. 학습 데이터 준비
-        console.print("[blue]ℹ[/blue] 1. 학습 데이터 준비 중...")
-        data_result = prepare_training_data()
-        if not data_result["success"]:
-            return data_result
-        
-        # 2. train_resnet50.py 실행
-        console.print("[blue]ℹ[/blue] 2. ResNet50 모델 학습 시작...")
-        import subprocess
-        import sys
-        
-        # train_resnet50.py 실행
-        train_script = BASE_DIR / "train_resnet50.py"
-        if not train_script.exists():
-            return {
-                "success": False,
-                "error": "train_resnet50.py 파일을 찾을 수 없습니다.",
-                "message": "학습 스크립트가 존재하지 않습니다."
-            }
-        
-        # Python 스크립트 실행
-        result = subprocess.run([
-            sys.executable, str(train_script)
-        ], capture_output=True, text=True, cwd=str(BASE_DIR))
-        
-        if result.returncode != 0:
-            console.print(f"[red]✗[/red] 학습 스크립트 실행 실패:")
-            console.print(f"[red]✗[/red] stdout: {result.stdout}")
-            console.print(f"[red]✗[/red] stderr: {result.stderr}")
-            return {
-                "success": False,
-                "error": f"학습 스크립트 실행 실패: {result.stderr}",
-                "message": "모델 학습 중 오류가 발생했습니다."
-            }
-        
-        console.print("[green]✓[/green] === 모델 학습 완료 ===")
-        console.print(f"[green]✓[/green] 학습 출력: {result.stdout}")
-        
-        # 체크포인트 관리 (백업 없이)
-        cleanup_old_checkpoints(BASE_DIR / "checkpoints", max_files=3)
-        
-        return {
-            "success": True,
-            "message": "ResNet50 모델 학습이 완료되었습니다.",
-            "training_output": result.stdout
-        }
-        
-    except Exception as e:
-        console.print(f"[red]✗[/red] 모델 학습 중 오류: {e}")
-        return {
-            "success": False,
-            "error": str(e),
-            "message": "모델 학습 중 오류가 발생했습니다."
-        }
 
 # cleanup_old_checkpoints 함수 제거 또는 단순화
 def cleanup_old_checkpoints(save_dir, max_files=5):
@@ -1123,6 +1049,81 @@ async def download_checkpoint():
             "error": str(e),
             "message": "체크포인트 다운로드 준비에 실패했습니다."
         }
+
+async def train_model():
+    """ResNet50 기반 분류 모델 학습 수행"""
+    try:
+        console.print("[blue]ℹ[/blue] === 실제 모델 학습 시작 ===")
+
+        # 1) 학습 데이터 준비
+        console.print("[blue]ℹ[/blue] 1. 학습 데이터 준비 중...")
+        data_result = prepare_training_data()
+        if not data_result["success"]:
+            return data_result
+
+        # 2) train_resnet50.py 실행
+        console.print("[blue]ℹ[/blue] 2. ResNet50 모델 학습 시작...")
+        import subprocess, sys
+        train_script = BASE_DIR / "train_resnet50.py"
+        if not train_script.exists():
+            return {"success": False, "error": "train_resnet50.py 파일을 찾을 수 없습니다.", "message": "학습 스크립트가 존재하지 않습니다."}
+
+        # 환경변수 설정 (CUDA 컨텍스트 전달)
+        env = os.environ.copy()
+        # CUDA 관련 환경변수 명시적 설정
+        env.update({
+            'CUDA_VISIBLE_DEVICES': '0',  # 첫 번째 GPU 사용
+            'PYTORCH_CUDA_ALLOC_CONF': 'max_split_size_mb:128',  # 메모리 할당 최적화
+        })
+
+        # GPU 사용 가능 여부 확인 및 설정
+        if torch.cuda.is_available():
+            env['CUDA_LAUNCH_BLOCKING'] = '1'  # 디버깅용 (선택사항)
+            console.print(f"[blue]ℹ[/blue] GPU 사용: {torch.cuda.get_device_name(0)}")
+        else:
+            console.print("[blue]ℹ[/blue] CPU 사용")
+
+        process = subprocess.Popen(
+            [sys.executable, "-u", str(train_script)],
+            cwd=str(BASE_DIR),
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+            bufsize=1,  # 라인 버퍼링
+            env=env  # 환경변수 전달
+        )
+
+        # 실시간 콘솔 출력 + 버퍼에 누적
+        collected = []
+        for line in process.stdout:
+            line = line.rstrip("\n")
+            if line:
+                console.print(line)
+                collected.append(line)
+
+        returncode = process.wait()
+        stdout_text = "\n".join(collected)
+
+        if returncode != 0:
+            console.print(f"[red]✗[/red] 학습 스크립트 실행 실패 (returncode={returncode})")
+            return {
+                "success": False,
+                "error": f"학습 스크립트 실행 실패 (returncode={returncode})",
+                "message": "모델 학습 중 오류가 발생했습니다.",
+                "stdout": stdout_text
+            }
+
+        console.print("[green]✓[/green] === 모델 학습 완료 ===")
+        console.print(f"[green]✓[/green] 학습 출력(요약): 마지막 {min(50, len(collected))}줄 표시")
+        for l in collected[-50:]:
+            console.print(l)
+
+        cleanup_old_checkpoints(BASE_DIR / "checkpoints", max_files=3)
+        return {"success": True, "message": "ResNet50 모델 학습이 완료되었습니다.", "training_output": stdout_text}
+
+    except Exception as e:
+        console.print(f"[red]✗[/red] 모델 학습 중 오류: {e}")
+        return {"success": False, "error": str(e), "message": "모델 학습 중 오류가 발생했습니다."}
 
 @app.post("/api/yolo/teach-model")
 async def teach_model(teaching_data: Dict[str, Any]):
@@ -1288,6 +1289,12 @@ async def download_checkpoint_file(filename: str):
         console.print(f"[red]✗[/red] 체크포인트 파일 다운로드 중 오류: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+@app.post("/api/train/start")
+@app.post("/api/yolo/train-model")  # deprecated: 하위 호환 유지
+async def start_training():
+    """ResNet50 기반 분류 모델 학습 시작"""
+    return await train_model()
+
 if __name__ == "__main__":
     console.print(" 고양이 영상 처리 백엔드 서버가 포트 5000에서 실행 중입니다.")
     console.print("📡 API 엔드포인트:")
@@ -1307,5 +1314,9 @@ if __name__ == "__main__":
     console.print("   - POST /api/yolo/teach-model (모델 학습)")
     console.print("   - GET  /api/cat-groups (그룹 정보 조회)")
     console.print("   - POST /api/cat-groups (그룹 정보 저장)")
+    console.print("   - GET  /api/train/progress (학습 진행 상태 확인)")
+    console.print("   - POST /api/train/start (학습 시작)")
     
     uvicorn.run(app, host="0.0.0.0", port=5000)
+
+

@@ -3,18 +3,18 @@
 학습 방식: 전체 모델 학습 (단일 학습률) + Contrastive Learning
 Temperature: 0.07
 Projection Dimension: 128
-총 샘플 수: 5
+총 샘플 수: 189
 특징 차원: 128
 클래스별 샘플 수:
-  Class 1: 2개
-  Class 2: 2개
-  Class 3: 1개
+  Class 1: 85개
+  Class 2: 54개
+  Class 3: 50개
 
 특징 통계:
-  평균: -0.0018
+  평균: -0.0004
   표준편차: 0.0884
-  최소값: -0.2696
-  최대값: 0.2738
+  최소값: -0.2974
+  최대값: 0.3162
 
 시각화 파일:
   t-SNE: C:\Users\w4d3r\git_archive\cat_ui\backend\checkpoints\tsne_visualization_resnet50_contrastive.png
